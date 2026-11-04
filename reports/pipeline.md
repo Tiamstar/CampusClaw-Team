@@ -4,7 +4,13 @@
 
 流水线依次初始化独立配置与数据库、构建后端、执行功能检查、安全检查和 OpenSpec 严格校验，再构建前端、MCP、执行代理及隔离镜像，启动服务并运行真实 HTTP/MCP/隔离执行冒烟。成功后保留对应提交号、镜像元数据和前后端镜像包七天。
 
-本轮源码将提交到 `codex/baseline-v0.1.0`，实际运行记录可从仓库的工作流页面核对。具体运行编号与结论在推送后登记。
+基础版源码已提交到 `codex/baseline-v0.1.0`，首个提交为 `87c597ac67aa80dc7f9dc01fc1f1aec6980606a2`。
+
+push 运行 `41791073786` 与 PR 运行 `41791217616` 均在开始执行步骤前被 GitHub 阻断。检查注释明确返回 `The job was not started because your account is locked due to a billing issue.`。这两次运行没有执行测试或构建，当前远端结论为受账号账单限制阻塞。
+
+仓库所有者处理账号账单锁定后，可重新运行工作流。当前本地功能与安全检查结果见 `gate-red-green.md`，本地镜像与真实工具验证见 `boot-reproduce.md`。
+
+[首个 push 运行](https://github.com/Tiamstar/CampusClaw-Team/actions/runs/41791073786) · [PR 运行](https://github.com/Tiamstar/CampusClaw-Team/actions/runs/41791217616) · [基础版 PR](https://github.com/Tiamstar/CampusClaw-Team/pull/1)
 
 [GitHub Actions 工作流记录](https://github.com/Tiamstar/CampusClaw-Team/actions/workflows/baseline.yml)
 

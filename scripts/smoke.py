@@ -30,7 +30,6 @@ def main():
     emails = [f'baseline-{suffix}-{role}@example.test' for role in ['teacher', 'student', 'outsider']]
     results = []
     tokens = {}
-    course_id = None
 
     def call(path, method='GET', data=None, token=None, expected=200, raw=False):
         headers = {}

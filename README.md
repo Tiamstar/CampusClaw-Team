@@ -31,6 +31,12 @@ docker compose up --build -d --wait --wait-timeout 180
 
 `setup_local.py` 一次性生成四个随机凭据到 `.env`，已有配置会保留。Compose 使用独立的 `campusclaw-team` 项目名及数据卷。
 
+隔离镜像下载慢时可指定镜像源重试，其余启动步骤相同。
+
+```sh
+docker compose --profile build build --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple --build-arg APT_MIRROR=mirrors.tuna.tsinghua.edu.cn sandbox-image
+```
+
 - 应用入口为 http://localhost:5174 。
 - 测试邮箱为 http://localhost:8026 。
 - 就绪检查为 http://localhost:5174/health/ ，数据库连接失败返回 503。

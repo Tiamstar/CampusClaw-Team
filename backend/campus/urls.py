@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.http import JsonResponse
 from django.urls import include, path
 from core.health import live, ready
 
