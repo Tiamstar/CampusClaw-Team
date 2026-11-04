@@ -18,6 +18,8 @@
 
 第三方技能保留原始许可证和版本信息。Anthropic 与 Superpowers 来源见 `backend/core/vendor_skills/sources.json`，OpenAI 技能版本见 `backend/core/vendor_skills/codex/sources.json`。基础版沿用原项目的来源声明，整体开源许可证由团队另行确定。
 
+上述通用技能记录对应 v0.1.0-baseline 标签。后续教学更新已移除当前通用目录，新的固定来源与许可保存在 `backend/core/teaching_skills/`，详见 [教学技能选型](teaching-skills-research.md)。
+
 ## 实际架构
 
 ```text

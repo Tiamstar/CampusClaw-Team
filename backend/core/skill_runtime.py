@@ -6,7 +6,7 @@ from zipfile import ZipFile, BadZipFile
 from asgiref.sync import sync_to_async
 from django.db.models import Q
 from .models import UserSkill, AssistantConfig, MCPServer
-from .skill_catalog import APPS, BUILTIN_SKILLS
+from .skill_catalog import APPS, BUILTIN_SKILLS, LEGACY_SKILL_IDS
 from .agent_runtime import ToolSpec
 from .mcp_client import rpc
 
@@ -103,7 +103,13 @@ def validate_refs(user, refs):
 
 
 def load_config(user, course_id):
-    config, _ = AssistantConfig.objects.get_or_create(owner=user, course_id=course_id)
+    config, _ = AssistantConfig.objects.get_or_create(
+        owner=user, course_id=course_id,
+        defaults={"skill_ids": list(APPS[0]["default_skill_ids"])},
+    )
+    available = {skill["id"] for skill in skill_list(user)}
+    migrated = [LEGACY_SKILL_IDS.get(skill_id, skill_id) for skill_id in config.skill_ids]
+    config.skill_ids = list(dict.fromkeys(skill_id for skill_id in migrated if skill_id in available))
     return config
 
 
@@ -163,7 +169,7 @@ def configure_registry(registry, selected, servers):
             result = await sync_to_async(save_execution_files)(response.json(), context)
             result["isError"] = result["exit_code"] != 0
             return result
-    if selected:
+    if any(path.startswith("scripts/") for skill in selected for path in skill["resources"]):
         registry.register(ToolSpec("run_skill_script", "1.0", {"type": "object", "properties": {
             "skill_id": {"type": "string", "enum": list(allowed_skills)}, "path": {"type": "string"},
             "args": {"type": "array", "items": {"type": "string"}, "maxItems": 20}}, "required": ["skill_id", "path"], "additionalProperties": False},

@@ -294,7 +294,9 @@ def agent_stream(request, thread_id):
                 system += "\n用户提示词模板：\n" + template
             if selected_skills:
                 system += "\n已绑定技能（仅摘要）：\n" + "\n".join(f"{s['id']}: {s['name']} — {s['description']}" for s in selected_skills)
-                system += "\n技能脚本在临时 Linux 容器中执行，工作目录包含技能参考文件与 scripts；可使用 Python、Node、Shell。生成文件请保存到 outputs/，会自动保存为可下载附件。Python Playwright 使用 executable_path='/usr/bin/chromium' 并带 --no-sandbox；脚本默认无网络，公网访问请调用已绑定的 browser_open。\n执行适合的技能前必须调用 read_skill 获取完整指令；参考文件用 read_skill_resource 按需读取。不得声称已执行未加载的技能。"
+                system += "\n执行适合的技能前必须调用 read_skill 获取完整指令；参考文件用 read_skill_resource 按需读取。每次按目标采用一种主要教学模式，不叠加互相矛盾的教学约束。不得声称已执行未加载的技能。"
+                if any(path.startswith("scripts/") for skill in selected_skills for path in skill["resources"]):
+                    system += "\n仅可执行已列出的 scripts/ 脚本，不编造脚本路径。脚本在临时 Linux 容器中运行，默认无网络。生成文件保存到 outputs/，以工具真实返回作为执行依据。"
             if unavailable_refs:
                 system += "\n以下工具当前不可用，请如实告知，不要编造结果：" + ", ".join(unavailable_refs)
             if citations:

@@ -6,13 +6,13 @@ import { Search, Plus, Check, Upload, ArrowUpRight, X, Sparkles, Blocks, Sliders
 const props = defineProps<{courseId:number;threadId:number|null}>()
 const emit = defineEmits<{saved:[];chat:[string]}>()
 type Skill = {id:string;name:string;description:string;category:string;icon:string;builtin:boolean;source:string;version:string;instructions?:string;resources?:Record<string,string>;resource_names:string[];source_url?:string;requirements?:string;license?:string;binary_resource_names?:string[];runtime_note?:string}
-type App = {id:string;name:string;icon:string;description:string;prompt:string;starter:string}
+type App = {id:string;name:string;icon:string;description:string;prompt:string;starter:string;default_skill_ids:string[]}
 type Config = {app_id:string;template:string;skill_ids:string[];mcp_refs:string[];use_knowledge:boolean}
 type Server = {id:number;name:string;url:string;connected:boolean;has_token:boolean;tools:{name:string;description:string;inputSchema:unknown}[];error:string}
 type Trace = {id:number;status:string;model:string;started_at:string;events:{event_type:string;payload:any;sequence:number}[];error:string}
 const sourceFilter = ref('all')
-const sourceOptions = [{id:'all',name:'全部来源'},{id:'codex',name:'OpenAI Codex'},{id:'anthropic',name:'Anthropic'},{id:'superpowers',name:'Superpowers'},{id:'campus',name:'CampusClaw'},{id:'uploaded',name:'我的上传'}]
-function matchesSource(s:Skill){return sourceFilter.value==='all'||(sourceFilter.value==='codex'&&s.source.includes('openai/skills'))||(sourceFilter.value==='anthropic'&&s.source.includes('anthropics/'))||(sourceFilter.value==='superpowers'&&s.source.includes('obra/'))||(sourceFilter.value==='campus'&&s.source.includes('CampusClaw'))||(sourceFilter.value==='uploaded'&&!s.builtin)}
+const sourceOptions = computed(()=>[{id:'all',name:'全部来源'},...Array.from(new Set(skills.value.filter(s=>s.builtin).map(s=>s.source))).map(source=>({id:source,name:source})),{id:'uploaded',name:'我的上传'}])
+function matchesSource(s:Skill){return sourceFilter.value==='all'||(sourceFilter.value==='uploaded'?!s.builtin:s.source===sourceFilter.value)}
 const section = ref('skills'), search = ref(''), category = ref('全部'), skills = ref<Skill[]>([]), apps = ref<App[]>([])
 const config = ref<Config>({app_id:'general',template:'',skill_ids:[],mcp_refs:[],use_knowledge:false})
 const platformServers = ref<Server[]>([])
@@ -29,7 +29,13 @@ async function save(){config.value=await api<Config>(`courses/${props.courseId}/
 async function toggle(skill:Skill){await attempt(async()=>{const before=[...config.value.skill_ids];config.value.skill_ids=before.includes(skill.id)?before.filter(id=>id!==skill.id):[...before,skill.id];try{await save();notice.value=config.value.skill_ids.includes(skill.id)?`已将「${skill.name}」添加到本课程助手`:'已从助手移除'}catch(e){config.value.skill_ids=before;throw e}})}
 async function upload(event:Event){const input=event.target as HTMLInputElement;const file=input.files?.[0];if(!file)return;await attempt(async()=>{const form=new FormData();form.append('file',file);await api('agent/skills/upload/','POST',form);await load();category.value='我的上传';notice.value='技能已上传，可查看内容并添加到助手'});input.value=''}
 async function openSkill(skill:Skill){await attempt(async()=>{detail.value=await api<Skill>(`agent/skills/${skill.id}/`)})}
-async function selectApp(app:App){await attempt(async()=>{config.value.app_id=app.id;await save();emit('chat',app.starter)})}
+async function selectApp(app:App){await attempt(async()=>{
+  const previous={...config.value,skill_ids:[...config.value.skill_ids]}
+  const uploaded=config.value.skill_ids.filter(id=>skills.value.some(s=>s.id===id&&!s.builtin))
+  config.value.app_id=app.id
+  config.value.skill_ids=[...new Set([...app.default_skill_ids,...uploaded])]
+  try{await save();emit('chat',app.starter)}catch(error){config.value=previous;throw error}
+})}
 async function addServer(demo=false){await attempt(async()=>{await api('agent/mcp/','POST',{name:demo?'campus-tools':serverName.value,url:demo?'http://campus-tools:8100/mcp':serverUrl.value,token_env:demo?'MCP_CAMPUS_TOKEN':tokenEnv.value});servers.value=await api<Server[]>('agent/mcp/');serverName.value='';serverUrl.value='';tokenEnv.value='';notice.value='服务器已登记，点击连接以握手并发现工具'})}
 async function connect(s:Server){await attempt(async()=>{await api(`agent/mcp/${s.id}/`,'POST',{action:s.connected?'disconnect':'connect'});servers.value=await api<Server[]>('agent/mcp/')})}
 async function bindTool(s:Server,name:string){await attempt(async()=>{const ref=`${name}@${s.name}`,before=[...config.value.mcp_refs];config.value.mcp_refs=before.includes(ref)?before.filter(r=>r!==ref):[...before,ref];try{await save()}catch(e){config.value.mcp_refs=before;throw e}})}
@@ -44,18 +50,18 @@ onMounted(()=>attempt(load))
 
 <template>
 <div class="studio">
-  <div class="studio-top"><div><span class="studio-eyebrow">CAMPUSCLAW / WORKSPACE</span><h2>让助手，多一项拿手好戏<span>✦</span></h2><p>挑选技能，连接工具，打造属于这门课的 AI 工作空间。</p></div><div class="studio-count"><strong>{{config.skill_ids.length.toString().padStart(2,'0')}}</strong><span>技能已添加</span></div></div>
+  <div class="studio-top"><div><span class="studio-eyebrow">CAMPUSCLAW / WORKSPACE</span><h2>让每一种教学，有合适的帮手<span>✦</span></h2><p>备课、测评、辅导与复习，从本课程的材料和学习目标开始。</p></div><div class="studio-count"><strong>{{config.skill_ids.length.toString().padStart(2,'0')}}</strong><span>技能已添加</span></div></div>
   <nav class="studio-nav"><button v-for="item in nav" :key="item.id" :class="{active:section===item.id}" @click="switchSection(item.id)"><component :is="item.icon" :size="16"/>{{item.name}}</button></nav>
   <div v-if="notice" class="studio-notice" role="status">{{notice}}<button @click="notice=''" aria-label="关闭提示"><X :size="14"/></button></div>
   <div v-if="provider==='mock'" class="studio-demo">当前为演示模型：工具可以真实测试；对话自动选择技能与工具需配置真实模型。</div>
   <section v-if="section==='skills'">
-    <div class="studio-section-head"><div><h3>技能广场 <span>{{skills.length}}</span></h3><p>精选开源技能与课程实用技能，按需读取、执行脚本。</p></div><label class="secondary studio-upload"><Upload :size="15"/>上传技能<input type="file" accept=".md,.zip" @change="upload" :disabled="busy"></label></div>
+    <div class="studio-section-head"><div><h3>技能广场 <span>{{skills.length}}</span></h3><p>16 项教学技能，覆盖备课、测评、个别辅导、错题复习与学术阅读。</p></div><label class="secondary studio-upload"><Upload :size="15"/>上传技能<input type="file" accept=".md,.zip" @change="upload" :disabled="busy"></label></div>
     <div class="studio-filters"><div class="studio-search"><Search :size="16"/><input v-model="search" placeholder="搜索技能、用途或来源" aria-label="搜索技能"></div><select v-model="sourceFilter" class="studio-source-select" aria-label="技能来源"><option v-for="source in sourceOptions" :key="source.id" :value="source.id">{{source.name}}</option></select><div class="studio-categories"><button v-for="c in categories" :key="c" :class="{active:category===c}" @click="category=c">{{c}}</button></div></div>
     <div class="skill-grid"><article v-for="s in filtered" :key="s.id" class="skill-card" :class="{installed:config.skill_ids.includes(s.id)}"><div class="skill-card-top"><span class="skill-symbol">{{s.icon}}</span><span class="skill-category">{{s.category}}</span></div><button class="skill-title" @click="openSkill(s)">{{s.name}}<ArrowUpRight :size="15"/></button><p>{{s.description}}</p><div class="skill-source">{{s.source}}</div><div class="skill-card-foot"><button class="skill-detail" @click="openSkill(s)">查看技能</button><button class="skill-add" :class="{added:config.skill_ids.includes(s.id)}" :disabled="busy" @click="toggle(s)"><Check v-if="config.skill_ids.includes(s.id)" :size="14"/><Plus v-else :size="14"/>{{config.skill_ids.includes(s.id)?'已添加':'添加到助手'}}</button></div></article></div>
     <div v-if="!filtered.length" class="studio-empty">没有找到匹配的技能，试试其他关键词或上传自己的技能。</div>
     <div class="studio-footnote">支持 SKILL.md 与 ZIP 技能包 · Python / JavaScript / Shell 隔离执行 · 参考文件按需加载</div>
   </section>
-  <section v-if="section==='apps'"><div class="studio-section-head"><div><h3>为不同任务，切换一种思路</h3><p>应用有独立的角色提示词，技能与知识库配置继续生效。</p></div></div><div class="app-grid"><button v-for="app in apps" :key="app.id" class="studio-app" @click="selectApp(app)"><span class="app-symbol">{{app.icon}}</span><span v-if="config.app_id===app.id" class="app-current">当前应用</span><h3>{{app.name}}</h3><p>{{app.description}}</p><span class="app-start">开始对话 <ArrowUpRight :size="16"/></span></button></div></section>
+  <section v-if="section==='apps'"><div class="studio-section-head"><div><h3>为不同任务，切换一种思路</h3><p>选择应用会绑定对应教学技能，保留你的上传技能与知识库设置。</p></div></div><div class="app-grid"><button v-for="app in apps" :key="app.id" class="studio-app" @click="selectApp(app)"><span class="app-symbol">{{app.icon}}</span><span v-if="config.app_id===app.id" class="app-current">当前应用</span><h3>{{app.name}}</h3><p>{{app.description}}</p><span class="app-start">开始对话 <ArrowUpRight :size="16"/></span></button></div></section>
   <section v-if="section==='prompts'" class="studio-config"><div class="studio-section-head"><div><h3>本课程的助手配置</h3><p>配置仅属于你的账号与当前课程，保存后下一次提问生效。</p></div><button class="primary" :disabled="busy" @click="attempt(async()=>{await save();notice='配置已保存'})">保存配置</button></div><label>AI 应用<select v-model="config.app_id"><option v-for="app in apps" :value="app.id" :key="app.id">{{app.name}}</option></select></label><label>提示词模板<textarea v-model="config.template" rows="9" maxlength="12000" placeholder="例如：你是 {{course}} 的助教。请先给结论，再列出步骤。针对 {{question}}，补充一个自测问题。"></textarea></label><p class="studio-help">可用变量：<code v-text="'{{course}}'"></code> 课程名、<code v-text="'{{question}}'"></code> 本次问题。展开后的模板将进入模型的 system 消息。</p><label class="studio-check"><input v-model="config.use_knowledge" type="checkbox">默认检索课程知识库（最多 4 个相关片段）</label><h4>已添加的技能</h4><div class="studio-chips"><button v-for="s in skills.filter(s=>config.skill_ids.includes(s.id))" :key="s.id" @click="toggle(s)">{{s.icon}} {{s.name}} <X :size="12"/></button><span v-if="!config.skill_ids.length">到技能广场添加第一项技能</span></div></section>
   <section v-if="section==='mcp'">
     <div class="studio-section-head"><div><h3>让 AI 连接真实能力</h3><p>官方 MCP SDK 服务 · 浏览器 · 隔离脚本 · 课程工具</p></div><button v-if="manager&&!servers.some(s=>s.name==='campus-tools')" class="secondary" :disabled="busy" @click="addServer(true)"><Plus :size="15"/>添加本地工具服务</button></div>

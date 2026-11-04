@@ -37,7 +37,7 @@ class Command(BaseCommand):
         self.stdout.write('MCP discovered: '+', '.join(t['name'] for t in server.tools))
         client=APIClient();client.credentials(HTTP_AUTHORIZATION='Bearer '+str(RefreshToken.for_user(user).access_token))
         config.app_id='general';config.template='你是 {{course}} 的实验助教。请用中文回答，先给结论，再列证据。';config.use_knowledge=False
-        config.skill_ids=['data-analysis'];config.mcp_refs=['formula_hint@campus-tools','python_execute@campus-tools','shell_execute@campus-tools','browser_open@campus-tools'];config.save()
+        config.skill_ids=['learning-analytics'];config.mcp_refs=['formula_hint@campus-tools','python_execute@campus-tools','shell_execute@campus-tools','browser_open@campus-tools'];config.save()
 
         def ask(label,content,knowledge=False):
             if options['only'] and options['only'] not in label:

@@ -42,7 +42,7 @@ def main():
         run([npm, 'audit', '--registry=https://registry.npmjs.org', '--audit-level=high'], ROOT / 'frontend')
     else:
         run(['docker', 'compose', 'run', '--rm', '--no-deps', 'backend', 'python', 'manage.py', 'makemigrations', '--check', '--dry-run'])
-        run(['docker', 'compose', 'run', '--rm', '--no-deps', 'backend', 'python', 'manage.py', 'test', 'core', '--noinput'])
+        run(['docker', 'compose', 'run', '--rm', '--no-deps', '-e', 'MODEL_PROVIDER=mock', '-e', 'MODEL_NAME=mock-local', '-e', 'MODEL_API_KEY=', '-e', 'ANTHROPIC_API_KEY=', '-e', 'EMBEDDING_API_KEY=', '-e', 'EMBEDDING_MODEL=', 'backend', 'python', 'manage.py', 'test', 'core', '--noinput'])
         run([npm, 'ci'], ROOT / 'frontend')
         run([npm, 'test'], ROOT / 'frontend')
         run([npm, 'run', 'build'], ROOT / 'frontend')

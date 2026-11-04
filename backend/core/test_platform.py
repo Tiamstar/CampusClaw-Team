@@ -26,7 +26,7 @@ class PlatformTests(TransactionTestCase):
         self.client = self.client_for(self.owner)
         self.oc = self.client_for(self.other)
         self.sc = self.client_for(self.student)
-        self.config = AssistantConfig.objects.create(owner=self.owner,course=self.course,template='课程：{{course}}；问题：{{question}}',skill_ids=['data-analysis'])
+        self.config = AssistantConfig.objects.create(owner=self.owner,course=self.course,template='课程：{{course}}；问题：{{question}}',skill_ids=['learning-analytics'])
 
     def client_for(self,user):
         client=APIClient();client.credentials(HTTP_AUTHORIZATION='Bearer '+str(RefreshToken.for_user(user).access_token));return client
@@ -39,7 +39,7 @@ class PlatformTests(TransactionTestCase):
 
     def test_catalog_upload_and_config_are_private(self):
         catalog=self.client.get('/api/agent/catalog/').json()
-        self.assertGreaterEqual(len(catalog['skills']),23)
+        self.assertTrue({'lesson-plan-builder','socratic-tutor','quiz-generator','course-guide'}.issubset({skill['id'] for skill in catalog['skills']}))
         self.assertNotIn('instructions',catalog['skills'][0])
         upload=SimpleUploadedFile('SKILL.md',b'---\nname: private\ndescription: private only\n---\nSecret instruction.',content_type='text/markdown')
         response=self.client.post('/api/agent/skills/upload/',{'file':upload})
@@ -90,9 +90,9 @@ class PlatformTests(TransactionTestCase):
             snapshot=json.loads(json.dumps(messages));seen.append(snapshot)
             await trace_record('llm_request',{'provider':'fixture','sent':False,'payload':{'messages':snapshot,'tools':tools}})
             if len(seen)==1:
-                yield {'tool_calls':[{'id':'read1','type':'function','function':{'name':'read_skill','arguments':'{"skill_id":"data-analysis"}'}}]},'fixture'
+                yield {'tool_calls':[{'id':'read1','type':'function','function':{'name':'read_skill','arguments':'{"skill_id":"learning-analytics"}'}}]},'fixture'
             elif len(seen)==2:
-                yield {'tool_calls':[{'id':'read2','type':'function','function':{'name':'read_skill_resource','arguments':'{"skill_id":"data-analysis","path":"scripts/summarize_numbers.py"}'}}]},'fixture'
+                yield {'tool_calls':[{'id':'read2','type':'function','function':{'name':'read_skill_resource','arguments':'{"skill_id":"learning-analytics","path":"scripts/summarize_numbers.py"}'}}]},'fixture'
             else:
                 yield '已经读取技能和脚本。','fixture'
         with patch('core.agent_runtime._model_stream_impl',scripted):
@@ -100,8 +100,8 @@ class PlatformTests(TransactionTestCase):
         self.assertIn('event: message_end',body)
         initial=seen[0][0]['content']
         self.assertIn('课程：MCP 实验；问题：分析 1、2、3',initial)
-        self.assertNotIn('先确认字段、样本、缺失和单位',initial)
-        self.assertIn('先确认字段、样本、缺失和单位',seen[1][-1]['content'])
+        self.assertNotIn('先确认学习目标、字段、样本、缺失和单位',initial)
+        self.assertIn('先确认学习目标、字段、样本、缺失和单位',seen[1][-1]['content'])
         self.assertIn('statistics.mean',seen[2][-1]['content'])
         self.assertEqual(seen[1][-1]['role'],'tool')
         events=AgentRun.objects.filter(thread=self.thread).get().events
@@ -177,7 +177,7 @@ class PlatformTests(TransactionTestCase):
         counter=[]
         async def model(messages,*args):
             counter.append(1)
-            yield {'tool_calls':[{'id':str(len(counter)),'type':'function','function':{'name':'read_skill','arguments':'{"skill_id":"data-analysis"}'}}]},'fixture'
+            yield {'tool_calls':[{'id':str(len(counter)),'type':'function','function':{'name':'read_skill','arguments':'{"skill_id":"learning-analytics"}'}}]},'fixture'
         with patch('core.agent_views.model_stream',model):
             body=self.stream()
         self.assertEqual(len(counter),6)
@@ -187,36 +187,64 @@ class PlatformTests(TransactionTestCase):
         self.assertLessEqual(run.events.filter(event_type='tool_result',payload__status='ok').count(),5)
 
 
-    def test_codex_catalog_is_pinned_and_does_not_send_full_assets(self):
+    def test_teaching_catalog_has_provenance_and_lazy_resources(self):
         from .skill_catalog import BUILTIN_SKILLS
-        codex=[s for s in BUILTIN_SKILLS if s['id'].startswith('codex-')]
-        self.assertEqual(len(codex),43)
-        self.assertEqual(len({s['id'] for s in BUILTIN_SKILLS}),len(BUILTIN_SKILLS))
-        for skill in codex:
-            self.assertIn('/49f948faa9258a0c61caceaf225e179651397431/',skill['source_url'])
-            self.assertIn('name:',skill['instructions'])
-            self.assertTrue(skill['license'])
-            self.assertTrue(skill['requirements'])
-        notebook=next(s for s in codex if s['id']=='codex-jupyter-notebook')
-        self.assertIn('scripts/new_notebook.py',notebook['resources'])
-        self.assertTrue(any(p.endswith('.ipynb') for p in notebook['resources']))
-        catalog=self.client.get('/api/agent/catalog/').json()['skills']
-        for skill in catalog:
-            self.assertNotIn('instructions',skill)
-            self.assertNotIn('binary_resources',skill)
-            self.assertNotIn('resources',skill)
-        detail=self.client.get('/api/agent/skills/codex-jupyter-notebook/').json()
-        self.assertNotIn('binary_resources',detail)
-        self.assertIn('scripts/new_notebook.py',detail['resources'])
+        self.assertEqual(len({s['id'] for s in BUILTIN_SKILLS}), len(BUILTIN_SKILLS))
+        self.assertTrue({'备课设计','作业测评','个别辅导','错题复习','编程实验','资料研读'}.issubset({s['category'] for s in BUILTIN_SKILLS}))
+        self.assertFalse(any(s['id'].startswith(('codex-', 'upstream-')) for s in BUILTIN_SKILLS))
+        for skill in BUILTIN_SKILLS:
+            if 'upstream' in skill:
+                self.assertEqual(len(skill['upstream']['commit']), 40)
+                self.assertIn('/' + skill['upstream']['commit'] + '/', skill['source_url'])
+                self.assertEqual(skill['license'], 'MIT')
+                self.assertIn('references/upstream.md', skill['resources'])
+        for skill in self.client.get('/api/agent/catalog/').json()['skills']:
+            self.assertNotIn('instructions', skill)
+            self.assertNotIn('resources', skill)
+            self.assertNotIn('binary_resources', skill)
+        self.assertEqual(self.client.get('/api/agent/skills/codex-jupyter-notebook/').status_code, 404)
+        detail=self.client.get('/api/agent/skills/learning-analytics/').json()
+        self.assertIn('scripts/summarize_numbers.py', detail['resources'])
 
-    def test_codex_bindings_remain_private_and_resources_are_loaded_on_demand(self):
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':['codex-jupyter-notebook']},format='json')
+    def test_teaching_bindings_remain_private_and_load_on_demand(self):
+        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':['programming-tutor']},format='json')
         self.assertEqual(response.status_code,200)
-        self.assertEqual(self.sc.get(f'/api/courses/{self.course.id}/assistant/').json()['skill_ids'],[])
+        self.assertNotIn('programming-tutor',self.sc.get(f'/api/courses/{self.course.id}/assistant/').json()['skill_ids'])
         with patch.dict(os.environ,{'MODEL_PROVIDER':'mock'}):
-            self.stream('创建 Notebook')
+            self.stream('帮我理解一段报错')
         request=AgentRun.objects.get(thread=self.thread).events.get(event_type='llm_request').payload
         system=request['payload']['messages'][0]['content']
-        self.assertIn('codex-jupyter-notebook',system)
-        self.assertNotIn('Create clean, reproducible Jupyter notebooks',system)
-        self.assertNotIn('new_notebook.py',system)
+        self.assertIn('programming-tutor',system)
+        self.assertNotIn('定位后请学习者解释原因',system)
+
+    def test_legacy_bindings_resolve_without_get_overwriting_preferences(self):
+        self.config.skill_ids=['data-analysis','codex-cloudflare-deploy','socratic-tutor']
+        self.config.save()
+        result=self.client.get(f'/api/courses/{self.course.id}/assistant/').json()
+        self.assertEqual(result['skill_ids'],['learning-analytics','socratic-tutor'])
+        self.config.refresh_from_db()
+        self.assertEqual(self.config.skill_ids,['data-analysis','codex-cloudflare-deploy','socratic-tutor'])
+
+    def test_prompt_only_teaching_skill_does_not_offer_script_execution(self):
+        self.config.skill_ids=['lesson-plan-builder']
+        self.config.save()
+        advertised=[]
+        async def model(messages, attachments=(), tools=()):
+            advertised.extend(tool['function']['name'] for tool in tools)
+            yield '教案草稿。','fixture'
+        with patch('core.agent_views.model_stream',model):
+            self.stream('设计教案')
+        self.assertIn('read_skill',advertised)
+        self.assertNotIn('run_skill_script',advertised)
+
+    def test_application_selects_teaching_defaults_and_custom_upload_is_preserved(self):
+        upload=SimpleUploadedFile('SKILL.md',b'---\nname: my-teaching\ndescription: custom learning workflow\n---\nUse the supplied learning evidence.')
+        sid=self.client.post('/api/agent/skills/upload/',{'file':upload}).json()['id']
+        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'app_id':'lesson'},format='json')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.json()['skill_ids'],['lesson-plan-builder','differentiated-instruction'])
+        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':['lesson-plan-builder',sid]},format='json')
+        self.assertEqual(response.status_code,200)
+        result=self.client.get(f'/api/courses/{self.course.id}/assistant/').json()
+        self.assertIn(sid,result['skill_ids'])
+        self.assertEqual(self.sc.get(f'/api/agent/skills/{sid}/').status_code,404)

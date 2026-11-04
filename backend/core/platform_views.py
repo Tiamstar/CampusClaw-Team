@@ -76,7 +76,8 @@ def assistant_config(request, course_id):
         app = data.get("app_id", c.app_id)
         if app not in {a["id"] for a in APPS}:
             raise ValueError("应用不存在")
-        ids = data.get("skill_ids", c.skill_ids)
+        default_ids = next(item["default_skill_ids"] for item in APPS if item["id"] == app)
+        ids = data.get("skill_ids", default_ids if app != c.app_id else c.skill_ids)
         available = {s["id"] for s in skill_list(request.user)}
         if not isinstance(ids, list) or len(ids) > 20 or any(not isinstance(i, str) or i not in available for i in ids):
             raise ValueError("技能不存在或超过 20 个")
