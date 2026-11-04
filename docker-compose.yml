@@ -1,0 +1,94 @@
+name: campusclaw-team
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-campus}
+      POSTGRES_USER: ${POSTGRES_USER:-campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python scripts/setup_local.py}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:${DB_PORT:-5434}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campus} -d ${POSTGRES_DB:-campus}"]
+      interval: 5s
+      retries: 10
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:${SMTP_PORT:-1026}:1025", "127.0.0.1:${MAIL_PORT:-8026}:8025"]
+  sandbox-image:
+    image: campusclaw-sandbox:local
+    build: ./sandbox_image
+    profiles: ["build"]
+  sandbox-runner:
+    build: ./sandbox_runner
+    environment:
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?Run python scripts/setup_local.py}
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+  campus-tools:
+    build: ./mcp_server
+    environment:
+      SANDBOX_URL: http://sandbox-runner:8200
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?Run python scripts/setup_local.py}
+      MCP_CAMPUS_TOKEN: ${MCP_CAMPUS_TOKEN:?Run python scripts/setup_local.py}
+    ports: ["127.0.0.1:${MCP_PORT:-8101}:8100"]
+  backend:
+    build: ./backend
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Run python scripts/setup_local.py}
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB:-campus}
+      POSTGRES_USER: ${POSTGRES_USER:-campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run python scripts/setup_local.py}
+      EMAIL_HOST: ${EMAIL_HOST:-mailpit}
+      EMAIL_PORT: ${EMAIL_PORT:-1025}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-0}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-0}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-CampusClaw <no-reply@campusclaw.local>}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174}
+      COOKIE_SECURE: ${COOKIE_SECURE:-0}
+      MEDIA_ROOT: /app/media
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-campus-tools}
+      SANDBOX_URL: http://sandbox-runner:8200
+      SANDBOX_TOKEN: ${SANDBOX_TOKEN:?Run python scripts/setup_local.py}
+      MCP_CAMPUS_TOKEN: ${MCP_CAMPUS_TOKEN:?Run python scripts/setup_local.py}
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-mock}
+      MODEL_API_BASE: ${MODEL_API_BASE:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_API_BASE: ${EMBEDDING_API_BASE:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 12
+    volumes: [uploads:/app/media]
+    ports: ["127.0.0.1:${API_PORT:-8001}:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+      mailpit: {condition: service_started}
+      campus-tools: {condition: service_started}
+      sandbox-runner: {condition: service_started}
+    command: sh -c "python manage.py migrate && python manage.py collectstatic --noinput && python manage.py bootstrap_tools && gunicorn campus.asgi:application --bind 0.0.0.0:8000 --workers 2 --worker-class uvicorn.workers.UvicornWorker --timeout 120"
+  frontend:
+    build: ./frontend
+    ports: ["127.0.0.1:${APP_PORT:-5174}:80"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      backend: {condition: service_healthy}
+volumes:
+  pgdata:
+  uploads:
