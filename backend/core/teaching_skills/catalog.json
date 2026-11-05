@@ -1,0 +1,262 @@
+[
+  {
+    "id": "curriculum-mapper",
+    "name": "课程目标与教学进度",
+    "category": "备课设计",
+    "icon": "▦",
+    "description": "制定多周课程的目标、先修关系和进度，检查目标与活动覆盖；单次课备课使用教案设计。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/curriculum-mapper/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/curriculum-mapper/SKILL.md"
+    }
+  },
+  {
+    "id": "lesson-plan-builder",
+    "name": "单课教案设计",
+    "category": "备课设计",
+    "icon": "▤",
+    "description": "围绕明确学习目标设计一节课的活动、时间预算和课堂检查，适用于教师备课。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/lesson-plan-builder/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/lesson-plan-builder/SKILL.md"
+    }
+  },
+  {
+    "id": "differentiated-instruction",
+    "name": "分层教学与学习支架",
+    "category": "备课设计",
+    "icon": "◫",
+    "description": "在同一学习目标下调整既有教案的任务难度、支架与分组，适用于不同基础的学习者。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/differentiated-instruction/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/differentiated-instruction/SKILL.md"
+    }
+  },
+  {
+    "id": "quiz-generator",
+    "name": "诊断测验与题目设计",
+    "category": "作业测评",
+    "icon": "✓",
+    "description": "依据学习目标生成形成性测验、自测题和答案解析，区分学生版与教师版。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/quiz-generator/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/quiz-generator/SKILL.md"
+    }
+  },
+  {
+    "id": "rubric-builder",
+    "name": "评分量规设计",
+    "category": "作业测评",
+    "icon": "▥",
+    "description": "将论文、项目或开放题目标转成有可观察表现的评分标准，供教师审核使用。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/rubric-builder/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/rubric-builder/SKILL.md"
+    }
+  },
+  {
+    "id": "student-feedback-writer",
+    "name": "作业反馈与改进建议",
+    "category": "作业测评",
+    "icon": "✎",
+    "description": "依据学生实际作答和评价标准提供具体反馈与下一步练习，不代替教师确定最终成绩。",
+    "tool_refs": [],
+    "source": "SkillMe 教学工具包 · 中文改编",
+    "source_url": "https://github.com/SkillMedev/educators-toolkit/blob/82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504/skills/student-feedback-writer/SKILL.md",
+    "version": "82b4a73c+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "SkillMedev/educators-toolkit",
+      "commit": "82b4a73c6b4347cc1ce71dc6a6a050a9a6c37504",
+      "path": "skills/student-feedback-writer/SKILL.md"
+    }
+  },
+  {
+    "id": "socratic-tutor",
+    "name": "苏格拉底解题引导",
+    "category": "个别辅导",
+    "icon": "?",
+    "description": "学习者明确希望逐步提示、检查思路或先自己解题时使用；每次只推进一个关键步骤。",
+    "tool_refs": [],
+    "source": "AI Teaching Skills · 中文改编",
+    "source_url": "https://github.com/bstellato/ai-teaching-skills/blob/6d3f85726e7b0fedacc8a078e174161293777044/ai-socratic-tutor/SKILL.md",
+    "version": "6d3f8572+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "bstellato/ai-teaching-skills",
+      "commit": "6d3f85726e7b0fedacc8a078e174161293777044",
+      "path": "ai-socratic-tutor/SKILL.md"
+    }
+  },
+  {
+    "id": "worked-solution-review",
+    "name": "参考解答对照学习",
+    "category": "个别辅导",
+    "icon": "⇄",
+    "description": "学生已有尝试和公开或自行提供的参考解答时，对照推理差异并逐项修正。",
+    "tool_refs": [],
+    "source": "AI Teaching Skills · 中文改编",
+    "source_url": "https://github.com/bstellato/ai-teaching-skills/blob/6d3f85726e7b0fedacc8a078e174161293777044/ai-solution-study/SKILL.md",
+    "version": "6d3f8572+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "bstellato/ai-teaching-skills",
+      "commit": "6d3f85726e7b0fedacc8a078e174161293777044",
+      "path": "ai-solution-study/SKILL.md"
+    }
+  },
+  {
+    "id": "teach-back",
+    "name": "费曼讲解与角色互教",
+    "category": "个别辅导",
+    "icon": "↔",
+    "description": "学习者想通过向 AI 讲解概念来检查理解时使用，AI 扮演好奇的新手。",
+    "tool_refs": [],
+    "source": "AI Teaching Skills · 中文改编",
+    "source_url": "https://github.com/bstellato/ai-teaching-skills/blob/6d3f85726e7b0fedacc8a078e174161293777044/ai-novice/SKILL.md",
+    "version": "6d3f8572+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "bstellato/ai-teaching-skills",
+      "commit": "6d3f85726e7b0fedacc8a078e174161293777044",
+      "path": "ai-novice/SKILL.md"
+    }
+  },
+  {
+    "id": "misconception-detector",
+    "name": "错因诊断与概念纠偏",
+    "category": "错题复习",
+    "icon": "◎",
+    "description": "依据具体错误作答识别误解、缺失先修知识或操作失误，并设计迁移题验证修正。",
+    "tool_refs": [],
+    "source": "Edu Agent Skills · 中文改编",
+    "source_url": "https://github.com/yugash007/edu-agent-skills/blob/e75f44303570bb2eae37a8f7536c0358be2502ee/skills/assessment/misconception-detector/SKILL.md",
+    "version": "e75f4430+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "yugash007/edu-agent-skills",
+      "commit": "e75f44303570bb2eae37a8f7536c0358be2502ee",
+      "path": "skills/assessment/misconception-detector/SKILL.md"
+    }
+  },
+  {
+    "id": "spaced-review",
+    "name": "间隔复习计划",
+    "category": "错题复习",
+    "icon": "◷",
+    "description": "根据学习目标、现有复习记录和回忆表现制定间隔复习建议，适用于已学内容的长期保持。",
+    "tool_refs": [],
+    "source": "Edu Agent Skills · 中文改编",
+    "source_url": "https://github.com/yugash007/edu-agent-skills/blob/e75f44303570bb2eae37a8f7536c0358be2502ee/skills/productivity/spaced-repetition/SKILL.md",
+    "version": "e75f4430+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "yugash007/edu-agent-skills",
+      "commit": "e75f44303570bb2eae37a8f7536c0358be2502ee",
+      "path": "skills/productivity/spaced-repetition/SKILL.md"
+    }
+  },
+  {
+    "id": "flashcards",
+    "name": "主动回忆学习卡片",
+    "category": "错题复习",
+    "icon": "▣",
+    "description": "将已学习概念制作成可自测的问答卡片，覆盖机制、应用、比较和常见误区。",
+    "tool_refs": [],
+    "source": "Edu Agent Skills · 中文改编",
+    "source_url": "https://github.com/yugash007/edu-agent-skills/blob/e75f44303570bb2eae37a8f7536c0358be2502ee/skills/productivity/flashcards/SKILL.md",
+    "version": "e75f4430+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "yugash007/edu-agent-skills",
+      "commit": "e75f44303570bb2eae37a8f7536c0358be2502ee",
+      "path": "skills/productivity/flashcards/SKILL.md"
+    }
+  },
+  {
+    "id": "programming-tutor",
+    "name": "编程实验与调试辅导",
+    "category": "编程实验",
+    "icon": "⌘",
+    "description": "围绕学习者提供的代码、报错与实验目标开展基于证据的调试和小步验证。",
+    "tool_refs": [],
+    "source": "Edu Agent Skills · 中文改编",
+    "source_url": "https://github.com/yugash007/edu-agent-skills/blob/e75f44303570bb2eae37a8f7536c0358be2502ee/skills/projects/debug-teacher/SKILL.md",
+    "version": "e75f4430+campus.1",
+    "license": "MIT",
+    "upstream": {
+      "repository": "yugash007/edu-agent-skills",
+      "commit": "e75f44303570bb2eae37a8f7536c0358be2502ee",
+      "path": "skills/projects/debug-teacher/SKILL.md"
+    }
+  },
+  {
+    "id": "course-guide",
+    "name": "课程资料循证答疑",
+    "category": "资料研读",
+    "icon": "▤",
+    "description": "对课程讲义、作业说明或上传资料提问时，检索本课程资料并给出可回查的回答。",
+    "tool_refs": [
+      "search_course_knowledge",
+      "list_course_materials"
+    ],
+    "source": "CampusClaw 教学技能",
+    "version": "0.2.0",
+    "license": "项目原创",
+    "source_url": "https://github.com/Tiamstar/CampusClaw-Team/tree/codex/baseline-v0.1.0/backend/core/teaching_skills/course-guide"
+  },
+  {
+    "id": "learning-analytics",
+    "name": "学习数据与测验统计解读",
+    "category": "作业测评",
+    "icon": "▥",
+    "description": "使用用户提供的匿名学习或测验数据做可复算的统计和教学解释，区分数据证据与推测。",
+    "tool_refs": [],
+    "source": "CampusClaw 教学技能",
+    "version": "0.2.0",
+    "license": "项目原创",
+    "source_url": "https://github.com/Tiamstar/CampusClaw-Team/tree/codex/baseline-v0.1.0/backend/core/teaching_skills/learning-analytics"
+  },
+  {
+    "id": "academic-reading",
+    "name": "论文与学术阅读指导",
+    "category": "资料研读",
+    "icon": "◈",
+    "description": "引导学生读懂已有论文、教材章节或研究材料，区分研究问题、方法、证据和局限。",
+    "tool_refs": [],
+    "source": "CampusClaw 教学技能",
+    "version": "0.2.0",
+    "license": "项目原创",
+    "source_url": "https://github.com/Tiamstar/CampusClaw-Team/tree/codex/baseline-v0.1.0/backend/core/teaching_skills/academic-reading"
+  }
+]

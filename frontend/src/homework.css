@@ -1,0 +1,64 @@
+.homework-workspace { display:grid; gap:20px; }
+.homework-toolbar, .homework-status-line, .homework-review-heading, .homework-grade-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.homework-toolbar, .homework-review-heading { justify-content:space-between; }
+.homework-toolbar .back { margin:0; }
+.homework-alert { margin:0; padding:12px 16px; border-radius:8px; background:#eef6f1; color:#285c43; line-height:1.7; font-size:13px; }
+.homework-alert.error, .file-error { color:#a41919; background:#fff1f0; }
+.homework-instructions .description { margin-bottom:14px; }
+.homework-student-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+.homework-teacher-layout { display:grid; grid-template-columns:280px minmax(0,1fr); gap:20px; align-items:start; }
+.homework-status { display:inline-flex; padding:4px 10px; border-radius:999px; background:#eeeceb; color:#6b6460; font-size:12px; white-space:nowrap; }
+.homework-status.submitted { background:#eaf1fb; color:#315d91; }
+.homework-status.pending_review { background:#fff2d9; color:#895d13; }
+.homework-status.graded { background:#e6f3eb; color:#276645; }
+.homework-status-line { font-size:12px; color:var(--muted); margin-bottom:16px; }
+.homework-roster { padding:20px 16px; }
+.homework-roster select { margin-bottom:14px; }
+.homework-student { display:grid; gap:5px; width:100%; text-align:left; border:1px solid transparent; border-radius:8px; background:transparent; padding:14px 12px; margin-bottom:6px; color:var(--ink); }
+.homework-student:hover { background:var(--bg); }
+.homework-student.active { border-color:var(--red-200); background:var(--red-50); }
+.homework-student small { font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+.homework-student .homework-status { justify-self:start; }
+.homework-answer { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.9; padding:18px; border:1px solid var(--line); border-radius:8px; background:var(--bg); margin:12px 0; }
+.homework-pending-files { display:grid; gap:5px; }
+.homework-pending-files>div { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; overflow-wrap:anywhere; }
+.homework-pending-files small { color:var(--muted); }
+.homework-student-layout form>.primary { margin-top:16px; }
+.homework-review-heading { margin:28px 0 14px; border-top:1px solid var(--line); padding-top:20px; }
+.homework-review-heading h3 { margin:0; }
+.homework-grade-form input[type=number] { max-width:220px; }
+.homework-result { display:grid; gap:8px; background:#f0f7f2; border-radius:10px; padding:20px; color:#295a3f; }
+.homework-result>strong { font-size:32px; }
+.homework-result strong small { font-size:15px; font-weight:400; }
+.homework-result p { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; font-size:14px; }
+.homework-version { border-top:1px solid var(--line); padding-top:14px; margin-top:18px; }
+.homework-version summary { cursor:pointer; font-size:13px; font-weight:600; line-height:1.8; }
+.homework-version summary .homework-status { margin-left:8px; }
+.homework-history { padding:12px 0; border-bottom:1px solid var(--line-soft); font-size:13px; }
+.homework-history small { display:block; color:var(--muted); margin-top:4px; }
+.homework-history p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.business-file { display:flex; align-items:center; gap:12px; padding:14px; margin:10px 0; border:1px solid var(--line); border-radius:9px; background:white; min-width:0; }
+.business-file-icon { color:var(--red); flex:none; }
+.business-file-copy { min-width:0; flex:1; display:grid; gap:5px; }
+.business-file-copy strong { font-size:13px; overflow-wrap:anywhere; }
+.business-file-copy small { font-size:11px; color:var(--muted); line-height:1.5; }
+.business-file-actions { display:flex; gap:7px; align-items:center; flex:none; }
+.business-file-actions .secondary { padding:7px 10px; font-size:12px; }
+.preview-unavailable { font-size:11px; color:var(--muted); }
+.file-reader-backdrop { position:fixed; inset:0; z-index:500; background:rgba(20,22,28,.7); display:flex; align-items:center; justify-content:center; padding:24px; }
+.file-reader { width:min(1320px,96vw); height:92vh; background:#f0f0f3; border-radius:12px; box-shadow:0 20px 80px #0005; display:flex; flex-direction:column; overflow:hidden; }
+.file-reader-header { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid #ddd; background:white; flex:none; }
+.file-reader-header>div { flex:1; min-width:0; display:grid; gap:4px; }
+.file-reader-header strong { font-size:15px; overflow-wrap:anywhere; }
+.file-reader-header small { font-size:12px; color:#737373; }
+.file-reader-frame { border:0; flex:1; width:100%; min-height:0; background:#e9e9ec; }
+.file-reader-state { display:grid; gap:12px; align-content:center; justify-items:center; flex:1; padding:30px; text-align:center; color:#666; }
+.file-reader-state>div { display:flex; gap:12px; }
+.file-reader-state h3,.file-reader-state p { margin:0; }
+.file-reader-image { flex:1; min-height:0; overflow:auto; display:flex; align-items:flex-start; justify-content:center; padding:24px; }
+.file-reader-image img { max-width:100%; height:auto; object-fit:contain; }
+.file-error { font-size:12px; padding:8px 12px; margin:0; }
+@media(max-width:1000px) { .homework-student-layout { grid-template-columns:1fr; } .homework-teacher-layout { grid-template-columns:220px minmax(0,1fr); } }
+@media(max-width:700px) { .homework-teacher-layout { grid-template-columns:1fr; } .homework-roster { max-height:300px; overflow:auto; } .business-file { flex-wrap:wrap; } .business-file-actions { margin-left:auto; } .file-reader-backdrop { padding:0; } .file-reader { height:100dvh; width:100vw; border-radius:0; } .file-reader-header { padding:12px; gap:8px; } .file-reader-header .secondary { font-size:0; padding:8px; } .file-reader-header .secondary svg { width:18px; } }
+
+.homework-materials { display:grid; gap:16px; }

@@ -1,0 +1,12 @@
+playwright
+requests
+beautifulsoup4
+pypdf>=6.21.4,<7
+python-docx
+Pillow>=13,<14
+pandas
+matplotlib
+reportlab
+pdfplumber
+PyYAML
+nbformat
