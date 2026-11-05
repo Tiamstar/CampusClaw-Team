@@ -23,6 +23,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .models import Assignment, Course, EmailCode, Material, Membership, StoredFile, Submission, SubmissionVersion, TeacherInvite, User, token_code
 from .agent_runtime import index_material
+from .file_access import authorized_file, preview_info
 
 EXTENSIONS = {"doc", "docx", "pdf", "zip", "xls", "xlsx", "ppt", "pptx", "txt", "md", "csv", "png", "jpg", "jpeg", "webp"}
 MAX_BYTES = 50 * 1024 * 1024
@@ -51,14 +52,7 @@ def course_data(course, user):
 
 def file_data(f):
     return {"id": f.id, "name": f.original_name, "size": f.size, "created_at": f.created_at,
-            "download_url": f"/api/files/{f.id}/download/"}
-
-
-def assignment_data(a):
-    return {"id": a.id, "title": a.title, "description": a.description, "due_at": a.due_at,
-            "allow_late": a.allow_late, "allowed_extensions": a.allowed_extensions,
-            "max_file_size_mb": a.max_file_size_mb, "attachment": file_data(a.attachment) if a.attachment else None,
-            "created_at": a.created_at}
+            "download_url": f"/api/files/{f.id}/download/", **preview_info(f)}
 
 
 def validate_file(upload, allowed=EXTENSIONS, max_bytes=MAX_BYTES):
@@ -308,105 +302,12 @@ def materials(request, course_id):
                      "index_status": entry.status if entry else "failed", "index_error": entry.error_message if entry else ""}, status=201)
 
 
-@api_view(["GET", "POST"])
-def assignments(request, course_id):
-    m = member(request.user, course_id)
-    if not m:
-        return fail("无权访问课程", 403)
-    course = get_object_or_404(Course, pk=course_id)
-    if request.method == "GET":
-        return Response([assignment_data(a) for a in course.assignments.select_related("attachment").order_by("-created_at")])
-    if m.role != "teacher":
-        return fail("仅教师可发布作业", 403)
-    title = str(request.data.get("title", "")).strip()
-    from django.utils.dateparse import parse_datetime
-    due = parse_datetime(str(request.data.get("due_at", "")))
-    if not title or not due or timezone.is_naive(due):
-        return fail("请填写标题和带时区的截止时间")
-    raw_exts = str(request.data.get("allowed_extensions", "")).strip().lower()
-    exts = [e.strip().lstrip(".") for e in raw_exts.split(",") if e.strip()] if raw_exts else []
-    if any(e not in EXTENSIONS for e in exts):
-        return fail("包含不支持的文件格式")
-    try:
-        max_mb = int(request.data.get("max_file_size_mb", 50))
-    except (TypeError, ValueError):
-        return fail("文件大小限制无效")
-    if not 1 <= max_mb <= 50:
-        return fail("文件大小限制须为 1-50 MB")
-    upload = request.FILES.get("file")
-    if upload:
-        error = validate_file(upload)
-        if error:
-            return fail(error)
-    f = store_file(course, request.user, upload, "assignment") if upload else None
-    item = Assignment.objects.create(course=course, title=title[:200], description=str(request.data.get("description", "")),
-        due_at=due, allow_late=str(request.data.get("allow_late", "false")).lower() == "true",
-        allowed_extensions=exts, max_file_size_mb=max_mb, attachment=f)
-    return Response(assignment_data(item), status=201)
-
-
-@api_view(["GET"])
-def assignment_detail(request, assignment_id):
-    a = get_object_or_404(Assignment.objects.select_related("attachment"), pk=assignment_id)
-    if not member(request.user, a.course_id):
-        return fail("无权访问作业", 403)
-    data = assignment_data(a)
-    if member(request.user, a.course_id, "student"):
-        s = Submission.objects.filter(assignment=a, student=request.user).first()
-        data["my_versions"] = [{"number": v.number, "submitted_at": v.submitted_at, "is_late": v.is_late,
-                                "attachment": file_data(v.attachment)} for v in s.versions.select_related("attachment").order_by("-number")] if s else []
-    return Response(data)
-
-
-@api_view(["GET"])
-def submissions(request, assignment_id):
-    a = get_object_or_404(Assignment, pk=assignment_id)
-    if not member(request.user, a.course_id, "teacher"):
-        return fail("仅教师可查看提交", 403)
-    rows = Submission.objects.filter(assignment=a).select_related("student").prefetch_related("versions__attachment")
-    return Response([{"student": {"id": s.student_id, "name": s.student.display_name, "email": s.student.email},
-                      "versions": [{"number": v.number, "submitted_at": v.submitted_at, "is_late": v.is_late,
-                                    "attachment": file_data(v.attachment)} for v in s.versions.all().order_by("-number")]}
-                     for s in rows])
-
-
-@api_view(["POST"])
-def submit(request, assignment_id):
-    a = get_object_or_404(Assignment, pk=assignment_id)
-    if not member(request.user, a.course_id, "student"):
-        return fail("仅本课程学生可提交", 403)
-    late = timezone.now() > a.due_at
-    if late and not a.allow_late:
-        return fail("作业已截止", 403)
-    upload = request.FILES.get("file")
-    error = validate_file(upload, set(a.allowed_extensions) if a.allowed_extensions else EXTENSIONS, a.max_file_size_mb * 1024 * 1024)
-    if error:
-        return fail(error)
-    with transaction.atomic():
-        submission, _ = Submission.objects.select_for_update().get_or_create(assignment=a, student=request.user)
-        next_number = (submission.versions.order_by("-number").values_list("number", flat=True).first() or 0) + 1
-        f = store_file(a.course, request.user, upload, "submission")
-        version = SubmissionVersion.objects.create(submission=submission, attachment=f, number=next_number, is_late=late)
-    return Response({"number": version.number, "is_late": late, "attachment": file_data(f)}, status=201)
-
-
 @api_view(["GET"])
 def download_file(request, file_id):
-    f = get_object_or_404(StoredFile, pk=file_id)
-    m = member(request.user, f.course_id)
-    if not m:
-        return fail("无权下载", 403)
-    if f.kind == "material":
-        allowed = Material.objects.filter(course_id=f.course_id, attachment=f).exists()
-    elif f.kind == "assignment":
-        allowed = Assignment.objects.filter(course_id=f.course_id, attachment=f).exists()
-    else:
-        versions = SubmissionVersion.objects.filter(attachment=f, submission__assignment__course_id=f.course_id)
-        allowed = versions.filter(submission__student=request.user).exists() if m.role == "student" else versions.exists()
-    if not allowed:
-        return fail("无权下载", 403)
+    f = authorized_file(request.user, file_id)
     if not f.file.storage.exists(f.file.name):
         return fail("文件不存在", 404)
     response = FileResponse(f.file.open("rb"), as_attachment=True, filename=f.original_name)
     response["Content-Type"] = mimetypes.guess_type(f.original_name)[0] or "application/octet-stream"
+    response["Cache-Control"] = "no-store"
     return response

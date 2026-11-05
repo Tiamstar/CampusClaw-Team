@@ -103,3 +103,7 @@ docker compose down
 - [工程规则](AGENTS.md) 和 [本次变更](openspec/changes/2026-11-04-import-personal-baseline/proposal.md) 约束第一版实现与审核。
 
 成员为李非凡、陈志康，按功能线交叉验收。当前基础版的自动化验证结果与成员交叉验收分别记录。
+
+## 作业提交与教师批改
+
+已支持文字、多附件、人工评分、成绩公开/撤回和文件大窗预览。使用说明、格式限制及验证见 [作业功能交付](docs/homework-review.md)。AI 自动批改和错题闭环尚未实现。

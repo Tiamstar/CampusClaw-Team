@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, assignment_views, file_views
 from . import agent_views, platform_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -24,11 +24,15 @@ urlpatterns = [
     path("courses/<int:course_id>/code/reset/", views.reset_join_code),
     path("courses/<int:course_id>/members/", views.members),
     path("courses/<int:course_id>/materials/", views.materials),
-    path("courses/<int:course_id>/assignments/", views.assignments),
-    path("assignments/<int:assignment_id>/", views.assignment_detail),
-    path("assignments/<int:assignment_id>/submissions/", views.submissions),
-    path("assignments/<int:assignment_id>/submit/", views.submit),
+    path("courses/<int:course_id>/assignments/", assignment_views.assignments),
+    path("assignments/<int:assignment_id>/", assignment_views.assignment_detail),
+    path("assignments/<int:assignment_id>/submissions/", assignment_views.submissions),
+    path("assignments/<int:assignment_id>/submit/", assignment_views.submit),
     path("files/<int:file_id>/download/", views.download_file),
+    path("files/<int:file_id>/preview/", file_views.preview_file),
+    path("submission-versions/<int:version_id>/review/", assignment_views.start_review),
+    path("submission-versions/<int:version_id>/grade/", assignment_views.grade_submission),
+    path("submission-versions/<int:version_id>/publication/", assignment_views.publish_grade),
     path("courses/<int:course_id>/knowledge/search/", agent_views.knowledge_search),
     path("courses/<int:course_id>/knowledge/reindex/", agent_views.reindex_course),
     path("materials/<int:material_id>/reindex/", agent_views.reindex_material),

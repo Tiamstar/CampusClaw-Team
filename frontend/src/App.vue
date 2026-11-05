@@ -3,19 +3,26 @@ import { onMounted, ref, computed, watch, nextTick } from 'vue'
 import AssistantStudio from './AssistantStudio.vue'
 import AgentResponse from './AgentResponse.vue'
 import HtmlPreview from './HtmlPreview.vue'
+import AssignmentWorkspace from './AssignmentWorkspace.vue'
+import FileCard from './FileCard.vue'
+import FilePreview from './FilePreview.vue'
+import './homework.css'
 import { renderMarkdown, type HtmlFile } from './htmlArtifacts'
 import { BookOpen, FolderOpen, ClipboardList, Users, LogOut, Plus, Download, RefreshCw, Upload, ChevronLeft, KeyRound, MessageSquare, Send, Square, Paperclip, FileText, ExternalLink, X, Code2, Eye, Wrench, PanelLeft, Menu } from 'lucide-vue-next'
-import { api, download, openProtected, protectedObjectUrl, streamAgent, uploadAgentAttachment, type Me, type Course, type Material, type Assignment, type Submission, type Member, type FileInfo, type AgentThread, type AgentMessage, type AgentCitation, type AgentArtifact } from './api'
+import { api, download, openProtected, protectedObjectUrl, streamAgent, uploadAgentAttachment, type Me, type Course, type Material, type Assignment, type Member, type FileInfo, type AgentThread, type AgentMessage, type AgentCitation, type AgentArtifact } from './api'
 import { clearTokens, hasStoredAuth, logoutAuth, restoreAuth, saveTokens, type TokenPair } from './auth'
 
 const me = ref<Me|null>(null), courses = ref<Course[]>([]), selected = ref<Course|null>(null)
 const navigationOpen = ref(window.innerWidth > 900), threadsOpen = ref(true)
 const materials = ref<Material[]>([]), assignments = ref<Assignment[]>([]), members = ref<Member[]>([])
-const currentAssignment = ref<Assignment|null>(null), submissions = ref<Submission[]>([])
+const currentAssignment = ref<Assignment|null>(null)
+const businessPreview = ref<FileInfo|null>(null)
+const statusLabels = {unsubmitted:"未提交",submitted:"已提交",pending_review:"待批改",graded:"已批改"}
 const tab = ref<'materials'|'assignments'|'members'|'agent'|'studio'>('materials'), authMode = ref<'login'|'register'|'reset'>('login')
+watch([() => selected.value?.id, tab, me], () => businessPreview.value = null)
 const email = ref(''), password = ref(''), displayName = ref(''), code = ref(''), invite = ref('')
 const courseName = ref(''), courseIcon = ref<File|null>(null), joinCode = ref(''), materialTitle = ref(''), materialFile = ref<File|null>(null)
-const assignmentTitle = ref(''), description = ref(''), dueAt = ref(''), allowLate = ref(false), extensions = ref(''), maxMb = ref(50), assignmentFile = ref<File|null>(null), submissionFile = ref<File|null>(null)
+const assignmentTitle = ref(''), description = ref(''), dueAt = ref(''), allowLate = ref(false), extensions = ref(''), maxMb = ref(50), assignmentFile = ref<File|null>(null), maxScore = ref(100)
 const message = ref(''), busy = ref(false), panel = ref<'none'|'create'|'join'|'invite'|'material'|'assignment'>('none')
 const agentThreads = ref<AgentThread[]>([]), activeThread = ref<AgentThread|null>(null), agentMessages = ref<AgentMessage[]>([])
 const agentDraft = ref(''), agentUseMaterials = ref(false), agentBusy = ref(false), agentStreaming = ref(''), agentRunId = ref<number|null>(null)
@@ -61,11 +68,11 @@ async function createCourse() { await run(async () => { const form = new FormDat
 async function joinCourse() { await run(async () => { const c = await api<Course>('courses/join/', 'POST', {code:joinCode.value}); courses.value.unshift(c); panel.value = 'none'; joinCode.value = ''; await selectCourse(c) }) }
 async function redeem() { await run(async () => { await api('teacher-invite/redeem/', 'POST', {code:invite.value}); await refreshUser(); panel.value = 'none'; invite.value = ''; message.value = '教师资格已开通' }) }
 async function resetCode() { if (!selected.value || !confirm('重置后旧课程码立即失效，确定继续？')) return; await run(async () => { const result = await api<{join_code:string}>(`courses/${selected.value!.id}/code/reset/`, 'POST'); selected.value!.join_code = result.join_code; message.value = '课程码已重置' }) }
-function fileFrom(event: Event, target: 'icon'|'material'|'assignment'|'submission') { const f = (event.target as HTMLInputElement).files?.[0] || null; if (target === 'icon') courseIcon.value = f; else if (target === 'material') materialFile.value = f; else if (target === 'assignment') assignmentFile.value = f; else submissionFile.value = f }
+function fileFrom(event: Event, target: 'icon'|'material'|'assignment') { const f = (event.target as HTMLInputElement).files?.[0] || null; if (target === 'icon') courseIcon.value = f; else if (target === 'material') materialFile.value = f; else if (target === 'assignment') assignmentFile.value = f }
 async function uploadMaterial() { if (!selected.value || !materialFile.value) { message.value = '请选择文件'; return } await run(async () => { const form = new FormData(); form.append('file', materialFile.value!); form.append('title', materialTitle.value); await api(`courses/${selected.value!.id}/materials/`, 'POST', form); materialTitle.value = ''; materialFile.value = null; panel.value = 'none'; await loadTab() }) }
-async function publish() { if (!selected.value) return; await run(async () => { const form = new FormData(); form.append('title', assignmentTitle.value); form.append('description', description.value); form.append('due_at', new Date(dueAt.value).toISOString()); form.append('allow_late', String(allowLate.value)); form.append('allowed_extensions', extensions.value); form.append('max_file_size_mb', String(maxMb.value)); if (assignmentFile.value) form.append('file', assignmentFile.value); await api(`courses/${selected.value!.id}/assignments/`, 'POST', form); assignmentTitle.value = ''; description.value = ''; assignmentFile.value = null; panel.value = 'none'; await loadTab() }) }
-async function openAssignment(a: Assignment) { await run(async () => { currentAssignment.value = await api<Assignment>(`assignments/${a.id}/`); if (isTeacher.value) submissions.value = await api<Submission[]>(`assignments/${a.id}/submissions/`) }) }
-async function submit() { if (!currentAssignment.value || !submissionFile.value) { message.value = '请选择作业文件'; return } await run(async () => { const form = new FormData(); form.append('file', submissionFile.value!); await api(`assignments/${currentAssignment.value!.id}/submit/`, 'POST', form); submissionFile.value = null; await openAssignment(currentAssignment.value!); message.value = '提交成功' }) }
+async function publish() { if (!selected.value) return; await run(async () => { const form = new FormData(); form.append('title', assignmentTitle.value); form.append('description', description.value); form.append('due_at', new Date(dueAt.value).toISOString()); form.append('allow_late', String(allowLate.value)); form.append('allowed_extensions', extensions.value); form.append('max_file_size_mb', String(maxMb.value)); form.append('max_score', String(maxScore.value)); if (assignmentFile.value) form.append('file', assignmentFile.value); await api(`courses/${selected.value!.id}/assignments/`, 'POST', form); assignmentTitle.value = ''; description.value = ''; assignmentFile.value = null; panel.value = 'none'; await loadTab() }) }
+function openAssignment(a: Assignment) { currentAssignment.value = a }
+async function backToAssignments() { currentAssignment.value = null; await run(loadTab) }
 async function getFile(file: FileInfo) { await run(async () => download(file)) }
 async function openCourseFile(url: string) { await run(async () => openProtected(url)) }
 async function openCitation(citation: AgentCitation) { await run(async () => openProtected(citation.preview_url || `/api/materials/${citation.material_id}/preview/`)) }
@@ -135,48 +142,18 @@ function handleProtectedLink(event: MouseEvent) {
           </div>
           <HtmlPreview v-if="previewFile" :file="previewFile" @close="closePreview" @expand="previewExpanded=$event"/>
         </section>
-        <section v-if="tab==='materials'"><div class="section-head"><div><h2>课程资料</h2><p>课程成员可以下载这些文件</p></div><button v-if="isTeacher" class="primary" @click="panel='material'"><Upload :size="17"/> 上传资料</button></div><div v-if="materials.length" class="list"><div v-for="m in materials" :key="m.id" class="list-row"><div class="file-icon"><FolderOpen :size="19"/></div><div class="row-copy"><strong>{{ m.title }}</strong><small>{{ m.attachment.name }} · {{ size(m.attachment.size) }} · {{ fmt(m.created_at) }}</small><small :class="m.index_status==='ready'?'index-ready':m.index_status==='failed'?'index-failed':'index-pending'">{{ m.index_status==='ready'?'已建立知识索引':m.index_status==='failed'?'未建立索引：'+(m.index_error || '请重试'):'正在建立索引' }}</small></div><button class="icon-button" title="下载" aria-label="下载" @click="getFile(m.attachment)"><Download :size="18"/></button></div></div><div v-else class="empty"><FolderOpen :size="32"/><h2>暂无课程资料</h2></div></section>
+        <section v-if="tab==='materials'"><div class="section-head"><div><h2>课程资料</h2><p>预览或下载课程文件</p></div><button v-if="isTeacher" class="primary" @click="panel='material'"><Upload :size="17"/> 上传资料</button></div><div v-if="materials.length" class="homework-materials"><article v-for="m in materials" :key="m.id" class="pane"><h3 v-if="m.title!==m.attachment.name">{{m.title}}</h3><FileCard :file="m.attachment" @preview="businessPreview=$event"/><p class="hint">{{fmt(m.created_at)}} · <span :class="m.index_status==='ready'?'index-ready':m.index_status==='failed'?'index-failed':'index-pending'">{{m.index_status==='ready'?'已建立知识索引':m.index_status==='failed'?'未建立索引：'+(m.index_error || '请重试'):'正在建立索引'}}</span></p></article></div><div v-else class="empty"><FolderOpen :size="32"/><h2>暂无课程资料</h2></div></section>
         <section v-if="tab==='assignments'">
           <div class="section-head"><div><h2>作业</h2><p>查看要求与提交记录</p></div><button v-if="isTeacher" class="primary" @click="panel='assignment'"><Plus :size="17"/> 发布作业</button></div>
-          <template v-if="currentAssignment">
-            <button class="back" @click="currentAssignment=null"><ChevronLeft :size="16"/> 返回作业列表</button>
-            <div class="assignment-detail">
-              <div class="assignment-hero">
-                <h2>{{ currentAssignment.title }}</h2>
-                <div class="chips"><span class="chip" :class="dueState(currentAssignment).cls">{{ dueState(currentAssignment).text }}</span><span class="chip">截止 {{ fmt(currentAssignment.due_at) }}</span><span class="chip">{{ currentAssignment.allow_late?'允许迟交':'截止后不可提交' }}</span><span class="chip">单文件 ≤ {{ currentAssignment.max_file_size_mb }} MB</span></div>
-              </div>
-              <div class="assignment-grid">
-                <div class="pane">
-                  <h3>作业说明</h3>
-                  <p class="description">{{ currentAssignment.description || '暂无说明' }}</p>
-                  <button v-if="currentAssignment.attachment" class="file-link" @click="getFile(currentAssignment.attachment)"><Download :size="16"/> {{ currentAssignment.attachment.name }}</button>
-                </div>
-                <div v-if="!isTeacher" class="pane submission-area">
-                  <h3>提交作业</h3>
-                  <div class="upload-line"><input :key="currentAssignment.my_versions?.length || 0" type="file" @change="fileFrom($event,'submission')"><button class="primary" :disabled="busy" @click="submit"><Upload :size="16"/> 提交文件</button></div>
-                  <p class="hint">支持 {{ currentAssignment.allowed_extensions.length?currentAssignment.allowed_extensions.join('、'):'doc、docx、pdf、zip 等常见格式' }}</p>
-                  <h3 class="sub">提交记录</h3>
-                  <div v-for="v in currentAssignment.my_versions || []" :key="v.number" class="version-item"><div class="row-copy"><strong>第 {{ v.number }} 版 · {{ v.attachment.name }}</strong><small>{{ fmt(v.submitted_at) }}<span v-if="v.is_late" class="late-tag">迟交</span></small></div><button class="icon-button" title="下载" aria-label="下载" @click="getFile(v.attachment)"><Download :size="18"/></button></div>
-                  <p v-if="!currentAssignment.my_versions?.length" class="muted">尚未提交</p>
-                </div>
-                <div v-else class="pane submission-area">
-                  <h3>学生提交 <span class="count">{{ submissions.length }}</span></h3>
-                  <div v-for="s in submissions" :key="s.student.id" class="student-row">
-                    <div class="student-id"><strong>{{ s.student.name }}</strong><small>{{ s.student.email }}</small></div>
-                    <div class="student-versions"><div v-for="v in s.versions" :key="v.number" class="version"><span>第 {{ v.number }} 版 · {{ fmt(v.submitted_at) }}<span v-if="v.is_late" class="late-tag">迟交</span></span><button @click="getFile(v.attachment)"><Download :size="16"/> {{ v.attachment.name }}</button></div></div>
-                  </div>
-                  <p v-if="!submissions.length" class="muted">暂无提交</p>
-                </div>
-              </div>
-            </div>
-          </template>
-          <div v-else-if="assignments.length" class="list"><button v-for="a in assignments" :key="a.id" class="list-row assignment-row" @click="openAssignment(a)"><div class="file-icon"><ClipboardList :size="19"/></div><div class="row-copy"><strong>{{ a.title }}</strong><small>截止 {{ fmt(a.due_at) }} · {{ a.allow_late?'允许迟交':'截止后关闭' }}</small></div><span class="due-badge" :class="dueState(a).cls">{{ dueState(a).text }}</span><span class="row-arrow">›</span></button></div>
+          <AssignmentWorkspace v-if="currentAssignment" :key="currentAssignment.id" :assignment-id="currentAssignment.id" :is-teacher="isTeacher" @back="backToAssignments" @preview="businessPreview=$event"/>
+          <div v-else-if="assignments.length" class="list"><button v-for="a in assignments" :key="a.id" class="list-row assignment-row" @click="openAssignment(a)"><div class="file-icon"><ClipboardList :size="19"/></div><div class="row-copy"><strong>{{ a.title }}</strong><small>截止 {{ fmt(a.due_at) }} · {{ a.allow_late?'允许迟交':'截止后关闭' }}</small></div><span v-if="!isTeacher" class="homework-status" :class="a.submission_status">{{ statusLabels[a.submission_status || 'unsubmitted'] }}</span><span class="due-badge" :class="dueState(a).cls">{{ dueState(a).text }}</span><span class="row-arrow">›</span></button></div>
           <div v-else class="empty"><ClipboardList :size="32"/><h2>暂无作业</h2></div>
         </section>
         <section v-if="tab==='members'"><div class="section-head"><div><h2>课程成员</h2><p>{{ members.length }} 位成员</p></div></div><div class="list"><div v-for="m in members" :key="m.id" class="list-row"><div class="avatar small">{{ m.name.slice(0,1) }}</div><div class="row-copy"><strong>{{ m.name }}</strong><small>{{ m.email }}</small></div><span class="role" :class="m.role">{{ m.role==='teacher'?'教师':'学生' }}</span></div></div></section>
       </template>
       <div v-if="message" class="notice" role="status">{{ message }}<button aria-label="关闭提示" @click="message=''">×</button></div>
     </main>
-    <div v-if="panel!=='none'" class="modal-backdrop" @click.self="panel='none'"><div class="modal"><div class="modal-head"><h2>{{ {create:'创建课程',join:'加入课程',invite:'教师邀请码',material:'上传资料',assignment:'发布作业'}[panel] }}</h2><button aria-label="关闭" @click="panel='none'">×</button></div><form v-if="panel==='create'" @submit.prevent="createCourse"><label>课程名称<input v-model="courseName" required maxlength="120" autofocus></label><label>课程图标（可选）<input type="file" accept="image/png,image/jpeg,image/webp" @change="fileFrom($event,'icon')"></label><button class="primary full" :disabled="busy">创建课程</button></form><form v-if="panel==='join'" @submit.prevent="joinCourse"><label>课程码<input v-model="joinCode" required maxlength="12" placeholder="输入教师提供的课程码"></label><button class="primary full" :disabled="busy">加入课程</button></form><form v-if="panel==='invite'" @submit.prevent="redeem"><label>教师邀请码<input v-model="invite" required></label><button class="primary full" :disabled="busy">兑换</button></form><form v-if="panel==='material'" @submit.prevent="uploadMaterial"><label>资料标题<input v-model="materialTitle" placeholder="留空则使用文件名"></label><label>文件<input type="file" required @change="fileFrom($event,'material')"></label><button class="primary full" :disabled="busy">上传资料</button></form><form v-if="panel==='assignment'" @submit.prevent="publish"><label>作业标题<input v-model="assignmentTitle" required maxlength="200"></label><label>作业说明<textarea v-model="description" rows="3"></textarea></label><label>截止时间<input v-model="dueAt" type="datetime-local" required></label><label>允许格式（逗号分隔，留空为全部常见格式）<input v-model="extensions" placeholder="doc,docx,pdf,zip"></label><label>单文件上限（MB）<input v-model.number="maxMb" type="number" min="1" max="50"></label><label>题目附件（可选）<input type="file" @change="fileFrom($event,'assignment')"></label><label class="check"><input v-model="allowLate" type="checkbox"> 允许迟交</label><button class="primary full" :disabled="busy">发布作业</button></form></div></div>
+    <FilePreview v-if="businessPreview" :file="businessPreview" @close="businessPreview=null"/>
+    <div v-if="panel!=='none'" class="modal-backdrop" @click.self="panel='none'"><div class="modal"><div class="modal-head"><h2>{{ {create:'创建课程',join:'加入课程',invite:'教师邀请码',material:'上传资料',assignment:'发布作业'}[panel] }}</h2><button aria-label="关闭" @click="panel='none'">×</button></div><form v-if="panel==='create'" @submit.prevent="createCourse"><label>课程名称<input v-model="courseName" required maxlength="120" autofocus></label><label>课程图标（可选）<input type="file" accept="image/png,image/jpeg,image/webp" @change="fileFrom($event,'icon')"></label><button class="primary full" :disabled="busy">创建课程</button></form><form v-if="panel==='join'" @submit.prevent="joinCourse"><label>课程码<input v-model="joinCode" required maxlength="12" placeholder="输入教师提供的课程码"></label><button class="primary full" :disabled="busy">加入课程</button></form><form v-if="panel==='invite'" @submit.prevent="redeem"><label>教师邀请码<input v-model="invite" required></label><button class="primary full" :disabled="busy">兑换</button></form><form v-if="panel==='material'" @submit.prevent="uploadMaterial"><label>资料标题<input v-model="materialTitle" placeholder="留空则使用文件名"></label><label>文件<input type="file" required @change="fileFrom($event,'material')"></label><button class="primary full" :disabled="busy">上传资料</button></form><form v-if="panel==='assignment'" @submit.prevent="publish"><label>作业标题<input v-model="assignmentTitle" required maxlength="200"></label><label>作业说明<textarea v-model="description" rows="3"></textarea></label><label>截止时间<input v-model="dueAt" type="datetime-local" required></label><label>允许格式（逗号分隔，留空为全部常见格式）<input v-model="extensions" placeholder="doc,docx,pdf,zip"></label><label>单文件上限（MB）<input v-model.number="maxMb" type="number" min="1" max="50"></label><label>满分<input v-model.number="maxScore" type="number" min="0.01" max="99999.99" step="0.01" required></label><label>题目附件（可选）<input type="file" @change="fileFrom($event,'assignment')"></label><label class="check"><input v-model="allowLate" type="checkbox"> 允许迟交</label><button class="primary full" :disabled="busy">发布作业</button></form></div></div>
   </div>
 </template>

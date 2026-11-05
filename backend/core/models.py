@@ -164,6 +164,7 @@ class Assignment(models.Model):
     allow_late = models.BooleanField(default=False)
     allowed_extensions = models.JSONField(default=list, blank=True)
     max_file_size_mb = models.PositiveSmallIntegerField(default=50)
+    max_score = models.DecimalField(max_digits=7, decimal_places=2, default=100)
     attachment = models.OneToOneField(StoredFile, null=True, blank=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -291,12 +292,41 @@ class Submission(models.Model):
 
 class SubmissionVersion(models.Model):
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="versions")
-    attachment = models.OneToOneField(StoredFile, on_delete=models.PROTECT)
+    attachment = models.OneToOneField(StoredFile, null=True, blank=True, on_delete=models.PROTECT)
+    files = models.ManyToManyField(StoredFile, blank=True, related_name="submission_versions")
+    text_content = models.TextField(blank=True)
     number = models.PositiveIntegerField()
     submitted_at = models.DateTimeField(default=timezone.now)
     is_late = models.BooleanField(default=False)
+    submission_key = models.CharField(max_length=64, blank=True)
+    content_hash = models.CharField(max_length=64, blank=True)
+    review_started_at = models.DateTimeField(null=True, blank=True)
+    score = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    graded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="graded_versions")
+    graded_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    grading_revision = models.PositiveIntegerField(default=0)
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["submission", "number"], name="unique_submission_version")]
+        constraints = [
+            models.UniqueConstraint(fields=["submission", "number"], name="unique_submission_version"),
+            models.UniqueConstraint(fields=["submission", "submission_key"], condition=~models.Q(submission_key=""), name="unique_submission_request"),
+        ]
+
+
+class SubmissionGradeRevision(models.Model):
+    version = models.ForeignKey(SubmissionVersion, on_delete=models.CASCADE, related_name="grade_revisions")
+    revision = models.PositiveIntegerField()
+    score = models.DecimalField(max_digits=7, decimal_places=2)
+    feedback = models.TextField(blank=True)
+    published = models.BooleanField(default=False)
+    actor = models.ForeignKey(User, on_delete=models.PROTECT)
+    reason = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['revision']
+        constraints = [models.UniqueConstraint(fields=["version", "revision"], name="unique_submission_grade_revision")]
 
 
 class AuditEvent(models.Model):

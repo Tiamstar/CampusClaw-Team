@@ -1,11 +1,13 @@
 import { authenticatedFetch } from './auth'
 
 export type Course = { id: number; name: string; role: 'teacher'|'student'; join_code: string|null; icon: string|null; member_count: number }
-export type FileInfo = { id: number; name: string; size: number; created_at: string; download_url: string }
+export type FileInfo = { id: number; name: string; size: number; created_at: string; download_url: string; preview_url?:string; preview_kind?:'pdf'|'image'|'document'|'text'|'unsupported'; preview_supported?:boolean; preview_note?:string }
 export type Material = { id: number; title: string; attachment: FileInfo; created_at: string; index_status?: string; index_error?: string }
-export type Assignment = { id: number; title: string; description: string; due_at: string; allow_late: boolean; allowed_extensions: string[]; max_file_size_mb: number; attachment: FileInfo|null; my_versions?: Version[] }
-export type Version = { number: number; submitted_at: string; is_late: boolean; attachment: FileInfo }
-export type Submission = { student: {id:number;name:string;email:string}; versions: Version[] }
+export type SubmissionStatus = 'unsubmitted'|'submitted'|'pending_review'|'graded'
+export type Grade = {score:string;feedback:string;graded_at:string;published:boolean;published_at:string|null;revision:number}
+export type Assignment = { id: number; title: string; description: string; due_at: string; allow_late: boolean; allowed_extensions: string[]; max_file_size_mb: number; max_score:string; attachment: FileInfo|null; my_versions?: Version[]; submission_status?:SubmissionStatus; submission_limits:{max_files:number;max_total_bytes:number;max_text_length:number} }
+export type Version = { id:number;number: number; submitted_at: string; is_late: boolean; attachment: FileInfo|null;files:FileInfo[];text_content:string;status:SubmissionStatus;grade:Grade|null;grade_published:boolean;grading_revision?:number;grade_history?:{revision:number;score:string;feedback:string;published:boolean;reason:string;created_at:string}[] }
+export type Submission = { id:number|null;student: {id:number;name:string;email:string}; status:SubmissionStatus;versions: Version[] }
 export type Member = {id:number;name:string;email:string;role:string}
 export type Me = {id:number;email:string;display_name:string;can_create_course:boolean}
 export type AgentThread = {id:number; title:string; course_id:number|null; status:string; created_at:string; updated_at:string}
@@ -31,13 +33,13 @@ export async function api<T>(path: string, method = 'GET', data?: Record<string,
   return res.json()
 }
 
-export async function protectedObjectUrl(url: string) {
-  const res = await checkResponse(await authenticatedFetch(url))
+export async function protectedObjectUrl(url: string, signal?:AbortSignal) {
+  const res = await checkResponse(await authenticatedFetch(url, {signal}))
   return URL.createObjectURL(await res.blob())
 }
 
-export async function protectedText(url: string) {
-  return (await checkResponse(await authenticatedFetch(url))).text()
+export async function protectedText(url: string, signal?:AbortSignal) {
+  return (await checkResponse(await authenticatedFetch(url, {signal}))).text()
 }
 
 export async function openProtected(url: string, existingTab?: Window|null) {
