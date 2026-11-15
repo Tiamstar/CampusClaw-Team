@@ -413,3 +413,5 @@ class AuditEvent(models.Model):
     skill_id = models.CharField(max_length=160, blank=True, db_index=True)
     duration_ms = models.PositiveIntegerField(default=0)
     tokens = models.PositiveIntegerField(null=True)
+
+from .gradebook_models import GradePolicy, GradeSnapshot

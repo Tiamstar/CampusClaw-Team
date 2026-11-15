@@ -1,0 +1,33 @@
+<script setup lang="ts">
+import {ref,onMounted} from 'vue'
+import {api,download} from './api'
+import './forum.css'
+type Item={kind:string;source_id:number;weight:string;title?:string;selection?:string}
+type Entry={score:string|null;max_score:string|null;status:string;source_record:number|null;grade_revision:number|null;published:boolean}
+type Row={student_id:number;name:string;complete:boolean;publishable:boolean;total:string|null;entries:Entry[]}
+type Snapshot={id:number;items:Item[];rows:Row[];stale:boolean;created_at:string;published_at:string|null;policy_revision:number;fingerprint:string}
+type Current={items:Item[];rows:Row[];policy_revision:number}
+const props=defineProps<{courseId:number;isTeacher:boolean}>()
+const base=`courses/${props.courseId}/`
+const loading=ref(true),busy=ref(false),error=ref(''),notice=ref(''),revision=ref(0)
+const sources=ref<{kind:string;source_id:number;title:string;enabled:boolean;weight:string}[]>([])
+const current=ref<Current|null>(null),snapshots=ref<Snapshot[]>([]),studentSnapshot=ref<Snapshot|null>(null)
+const labels:Record<string,string>={missing:'缺交 / 缺考',awaiting_review:'待复核',in_progress:'作答中',finalized:'正式评分',invalid_score:'满分或来源评分失效，需复核'}
+async function run(action:()=>Promise<void>){busy.value=true;error.value='';notice.value='';try{await action()}catch(e){error.value=e instanceof Error?e.message:'操作失败'}finally{busy.value=false}}
+async function load(){const data=await api<{current?:Current;snapshots?:Snapshot[];snapshot?:Snapshot|null}>(base+'gradebook/');current.value=data.current||null;snapshots.value=data.snapshots||[];studentSnapshot.value=data.snapshot||null}
+async function policy(){const p=await api<{revision:number;items:Item[]}>(base+'grade-policy/');revision.value=p.revision;const assignments=await api<{id:number;title:string}[]>(base+'assignments/'),quizzes=await api<{id:number;title:string;status:string}[]>(base+'quizzes/');sources.value=[...assignments.map(x=>({kind:'assignment',source_id:x.id,title:x.title})),...quizzes.filter(x=>x.status!=='draft').map(x=>({kind:'quiz',source_id:x.id,title:x.title}))].map(x=>{const item=p.items.find(i=>i.kind===x.kind&&i.source_id===x.source_id);return {...x,enabled:!!item,weight:item?.weight||'0'}})}
+async function savePolicy(){await run(async()=>{await api(base+'grade-policy/','PUT',{expected_revision:revision.value,items:sources.value.filter(x=>x.enabled).map(x=>({kind:x.kind,source_id:x.source_id,weight:x.weight}))});await policy();await load();notice.value='策略已保存，旧快照保持原值；请重新生成快照'})}
+async function generate(){await run(async()=>{await api(base+'gradebook/','POST',{});await load();notice.value='已生成可回查的成绩快照（未自动发布）'})}
+async function publish(s:Snapshot){await run(async()=>{await api(`grade-snapshots/${s.id}/publication/`,'POST',{published:!s.published_at});await load();notice.value=s.published_at?'已撤回总评':'已发布完整总评'})}
+async function exportSheet(s:Snapshot){await run(()=>download({id:s.id,name:`gradebook-${s.id}.xlsx`,size:0,created_at:s.created_at,download_url:`/api/grade-snapshots/${s.id}/export/`}))}
+onMounted(async()=>{await run(async()=>{await load();if(props.isTeacher)await policy()});loading.value=false})
+</script>
+<template>
+<section class="forum-workspace gradebook-workspace"><div class="section-head"><div><h2>成绩册</h2><p>按正式评分与权重汇总；缺分保留不完整，公开前由教师确认。</p></div><button class="secondary" :disabled="busy" @click="run(load)">刷新数据</button></div><p v-if="loading" role="status">正在加载成绩册…</p><p v-if="error" class="error" role="alert">{{error}}</p><p v-if="notice" role="status">{{notice}}</p>
+<template v-if="isTeacher"><form class="forum-card forum-form" @submit.prevent="savePolicy"><h3>成绩策略 · 版本 {{revision}}</h3><p>权重合计须为 100%。作业取最新提交；测验取最高正式分，并列取较晚完成。不同试卷按各自冻结满分归一化。</p><p v-if="!sources.length">请先创建作业或发布测验。</p><div v-for="source in sources" :key="source.kind+source.source_id" class="grade-source"><label><input v-model="source.enabled" type="checkbox">{{source.kind==='quiz'?'测验':'作业'}} · {{source.title}}</label><label v-if="source.enabled">权重 %<input v-model="source.weight" type="number" min="0.01" max="100" step="0.01" required></label></div><button class="primary" :disabled="busy||!sources.length">保存策略</button></form>
+<article class="forum-card"><h3>当前数据 · 策略版本 {{current?.policy_revision||0}}</h3><p v-if="!current?.items.length">尚未设置成绩项。</p><div v-else class="grade-table"><table><thead><tr><th>姓名</th><th v-for="i in current.items" :key="i.kind+i.source_id">{{i.title}}（{{i.weight}}%）</th><th>总评 / 100</th></tr></thead><tbody><tr v-for="r in current.rows" :key="r.student_id"><td>{{r.name}}</td><td v-for="(v,n) in r.entries" :key="n">{{labels[v.status]}}<template v-if="v.score!==null"> · {{v.score}} / {{v.max_score}}<br>评分版本 {{v.grade_revision}} · {{v.published?'已公开':'尚未公开'}}</template></td><td>{{r.total??'不完整'}}</td></tr></tbody></table></div><button class="primary" :disabled="busy||!current?.items.length" @click="generate">生成成绩快照</button></article>
+<h3>保留的成绩快照</h3><p v-if="!snapshots.length">尚无快照。</p><article v-for="s in snapshots" :key="s.id" class="forum-card"><h4>快照 #{{s.id}} · 策略版本 {{s.policy_revision}}</h4><p>{{new Date(s.created_at).toLocaleString()}} · {{s.published_at?'已发布':'未发布'}} · {{s.stale?'来源已变化，需重新生成':'与当前来源一致'}}</p><p>数据指纹 {{s.fingerprint.slice(0,16)}}</p><p v-for="r in s.rows" :key="r.student_id">{{r.name}} · {{r.total??'不完整'}} {{r.publishable?'':'（含缺分 / 未公开来源）'}}</p><div class="forum-actions"><button class="secondary" :disabled="busy||(!s.published_at&&(s.stale||s.rows.some(r=>!r.publishable)))" @click="publish(s)">{{s.published_at?'撤回总评':'确认发布完整总评'}}</button><button class="secondary" :disabled="busy" @click="exportSheet(s)">导出此快照 Excel</button></div></article></template>
+<template v-else><article v-if="studentSnapshot" class="forum-card"><h3>我的总评：{{studentSnapshot.rows[0]?.total}} / 100</h3><p>快照 #{{studentSnapshot.id}} · 策略版本 {{studentSnapshot.policy_revision}} · {{new Date(studentSnapshot.created_at).toLocaleString()}}</p><p v-for="(entry,n) in studentSnapshot.rows[0]?.entries||[]" :key="n">{{studentSnapshot.items[n].title}} · {{entry.score}} / {{entry.max_score}} · 权重 {{studentSnapshot.items[n].weight}}% · 评分版本 {{entry.grade_revision}}</p></article><p v-else-if="!loading">暂无可见的完整总评。教师尚未发布，或来源已更新、撤回，需要重新确认。</p></template>
+</section>
+</template>
+<style scoped>.grade-table{overflow-x:auto;margin:1rem 0}table{border-collapse:collapse;min-width:100%;font-size:.9rem}th,td{padding:.75rem;text-align:left;vertical-align:top;border-bottom:1px solid #ddd;min-width:120px}.grade-source{padding:.6rem 0;border-bottom:1px solid #eee}.grade-source label{overflow-wrap:anywhere}</style>

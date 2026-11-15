@@ -1,3 +1,4 @@
+from . import gradebook_views
 from django.urls import path
 from . import views, assignment_views, file_views
 from . import agent_views, platform_views
@@ -6,6 +7,10 @@ from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('courses/<int:course_id>/grade-policy/', gradebook_views.policy),
+    path('courses/<int:course_id>/gradebook/', gradebook_views.gradebook),
+    path('grade-snapshots/<int:snapshot_id>/publication/', gradebook_views.publication),
+    path('grade-snapshots/<int:snapshot_id>/export/', gradebook_views.export),
     path('courses/<int:course_id>/questions/',quiz_views.questions),
     path('questions/<int:question_id>/',quiz_views.question_detail),
     path('courses/<int:course_id>/quizzes/',quiz_views.quizzes),
