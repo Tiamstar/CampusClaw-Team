@@ -2,6 +2,7 @@ import secrets
 from pathlib import Path
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from pgvector.django import VectorField
 from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion
@@ -251,6 +252,8 @@ class KnowledgeChunk(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         constraints = [models.UniqueConstraint(fields=["entry", "chunk_index"], name="unique_knowledge_chunk")]
+        indexes = [GinIndex(fields=['chunk_text'], opclasses=['gin_trgm_ops'],
+                            condition=models.Q(status='ready'), name='ready_chunk_text_trgm')]
 
 
 class ChunkEmbedding(models.Model):
