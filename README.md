@@ -4,7 +4,7 @@
 
 [源码与第一版交付范围](docs/baseline-v0.1.0.md) · [第 9、10 课检查结论](report.md) · [需求与验收](docs/requirements-traceability.md) · [贡献指南](CONTRIBUTING.md)
 
-本地扩展证据：[安全与公式](docs/security-math.md) · [论坛](docs/forum-delivery.md) · [测验](docs/quiz-delivery.md) · [成绩册第一阶段](docs/gradebook-delivery.md) · [学情与 MCP](docs/learning-mcp-delivery.md)
+本地扩展证据：[安全与公式](docs/security-math.md) · [论坛](docs/forum-delivery.md) · [测验](docs/quiz-delivery.md) · [成绩册第一阶段](docs/gradebook-delivery.md) · [学情与 MCP](docs/learning-mcp-delivery.md) · [知识图谱](docs/graph-delivery.md)
 
 ## 技术栈
 

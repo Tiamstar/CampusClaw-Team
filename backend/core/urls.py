@@ -1,3 +1,4 @@
+from . import graph_views
 from . import data_mcp
 from . import learning_views
 from . import gradebook_views
@@ -9,6 +10,14 @@ from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('courses/<int:course_id>/graph/', graph_views.graph),
+    path('courses/<int:course_id>/graph/config/', graph_views.config),
+    path('courses/<int:course_id>/graph/candidates/', graph_views.candidates),
+    path('courses/<int:course_id>/graph/resources/', graph_views.link),
+    path('courses/<int:course_id>/graph/versions/', graph_views.versions),
+    path('graph/candidates/<int:candidate_id>/review/', graph_views.review),
+    path('graph/points/<int:point_id>/', graph_views.point_edit),
+    path('graph/points/<int:point_id>/resources/', graph_views.resources),
     path('mcp/course-data/', data_mcp.endpoint),
     path('courses/<int:course_id>/learning/', learning_views.analytics),
     path('courses/<int:course_id>/grade-policy/', gradebook_views.policy),

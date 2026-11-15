@@ -16,7 +16,7 @@ def fingerprint(value):
 def question_snapshot(q):
     return {'id':q.id,'revision':q.revision,'kind':q.kind,'body':q.body,'options':q.options,
             'answer':q.answer,'explanation':q.explanation,'score':str(q.score),
-            'points':[{'id':p.id,'name':p.name} for p in q.points.all()]}
+            'points':[{'id':p.id,'name':p.name,'revision':p.revision} for p in q.points.all()]}
 
 
 def paper(quiz):

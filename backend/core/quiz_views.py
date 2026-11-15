@@ -47,7 +47,7 @@ def validate_question(data,course_id):
     if kind=='blank':values=[v.strip() for v in values]
     if kind=='short' and not any(v.strip() for v in values):raise ValueError('简答须提供评分参考')
     points=data.get('point_ids',[])
-    if not isinstance(points,list) or len(points)>20 or any(type(i) is not int for i in points) or KnowledgePoint.objects.filter(course_id=course_id,id__in=points).count()!=len(set(points)):raise ValueError('知识点无效或属于他班')
+    if not isinstance(points,list) or len(points)>20 or any(type(i) is not int for i in points) or KnowledgePoint.objects.filter(course_id=course_id,active=True,id__in=points).count()!=len(set(points)):raise ValueError('知识点无效、停用或属于他班')
     return {'kind':kind,'body':body,'score':score,'options':options,'answer':{'values':values},
             'explanation':text(data,'explanation',10000,False)},points
 

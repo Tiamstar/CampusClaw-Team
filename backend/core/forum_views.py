@@ -113,9 +113,16 @@ def points(request,course_id):
     access(request.user,course_id)
     if request.method=='POST':
         access(request.user,course_id,True)
-        item,_=KnowledgePoint.objects.get_or_create(course_id=course_id,name=text(request.data,'name',100))
+        from .models import Course
+        from .graph_service import save_version
+        name=text(request.data,'name',100)
+        with transaction.atomic():
+            Course.objects.select_for_update().get(pk=course_id)
+            item,created=KnowledgePoint.objects.get_or_create(course_id=course_id,name=name)
+            if not item.active:return fail('该知识点已停用，请在图谱显式恢复',409)
+            if created:save_version(course_id,request.user,'教师在论坛新增知识点')
         return Response({'id':item.id,'name':item.name},status=201)
-    return Response(list(KnowledgePoint.objects.filter(course_id=course_id).order_by('name').values('id','name')))
+    return Response(list(KnowledgePoint.objects.filter(course_id=course_id,active=True).order_by('name').values('id','name')))
 
 
 @api_view(['GET','POST'])
@@ -142,7 +149,7 @@ def posts(request,course_id):
     point_ids,mentions=request.data.get('point_ids',[]),request.data.get('mention_ids',[])
     if type(anonymous) is not bool or any(not isinstance(v,list) or len(v)>20 or any(type(i) is not int for i in v) for v in [point_ids,mentions]):
         return fail('匿名、知识点或教师选择无效')
-    if KnowledgePoint.objects.filter(course_id=course_id,id__in=point_ids).count()!=len(set(point_ids)) or Membership.objects.filter(course_id=course_id,role='teacher',user_id__in=mentions).count()!=len(set(mentions)):
+    if KnowledgePoint.objects.filter(course_id=course_id,active=True,id__in=point_ids).count()!=len(set(point_ids)) or Membership.objects.filter(course_id=course_id,role='teacher',user_id__in=mentions).count()!=len(set(mentions)):
         return fail('知识点或提及教师不属于本课程')
     with transaction.atomic():
         post=ForumPost.objects.create(course_id=course_id,author=request.user,title=title,body=body,anonymous=anonymous)

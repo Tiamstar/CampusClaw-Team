@@ -17,6 +17,8 @@ class AuthRateLimit(models.Model):
 class KnowledgePoint(models.Model):
     course = models.ForeignKey('Course', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+    revision = models.PositiveIntegerField(default=1)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['course', 'name'], name='unique_course_point')]
@@ -415,3 +417,5 @@ class AuditEvent(models.Model):
     tokens = models.PositiveIntegerField(null=True)
 
 from .gradebook_models import GradePolicy, GradeSnapshot
+
+from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource, GraphVersion

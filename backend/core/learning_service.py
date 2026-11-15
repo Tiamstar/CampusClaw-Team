@@ -24,12 +24,12 @@ def evidence(course_id, student_ids, start, end, include_unpublished=False):
                     continue
             except Exception:
                 continue
-            tags = {p['id']: p['name'] for p in question.get('points', []) if p.get('id') in point_ids}
+            tags = {p['id']: {'name':p['name'], 'revision':p.get('revision',1)} for p in question.get('points', []) if p.get('id') in point_ids}
             # Include untagged records in selection: a later untagged revision must not revive old tags.
             result.append({'student_id': attempt.student_id, 'question_id': question['id'],
                 'question_revision': question['revision'], 'attempt_id': attempt.id, 'quiz_id': attempt.quiz_id,
                 'grade_revision': attempt.grade_revision, 'score': str(score), 'maximum': str(maximum),
-                'points': [{'id': key, 'name': value} for key, value in sorted(tags.items())],
+                'points': [{'id': key, **value} for key, value in sorted(tags.items())],
                 'submitted_at': attempt.submitted_at.isoformat(), 'published': attempt.quiz.grades_published})
     return result
 
