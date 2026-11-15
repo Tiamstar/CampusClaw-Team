@@ -471,3 +471,4 @@ from .review_models import ReviewPlan, ReviewReminder
 from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion
 from .coursework_models import CourseworkSettings, CourseworkTask
 from .telemetry_models import ModelCall, SkillMetricSample, SkillAlert, SkillAlertEvent, SkillMonitorHeartbeat
+from .confirmation_models import ToolConfirmation

@@ -211,8 +211,8 @@ def tool_test(request, thread_id):
         async def execute():
             return await asyncio.wait_for(registry.execute(name, arguments, ToolContext(request.user, thread, frozenset(permissions), request.request_id, config.revision if config else None)), 50)
         result = async_to_sync(execute)()
-        status = "error" if isinstance(result, dict) and result.get("isError") else "ok"
-        run.status = "completed" if status == "ok" else "failed"
+        status = "pending" if isinstance(result, dict) and result.get("confirmation_required") else ("error" if isinstance(result, dict) and result.get("isError") else "ok")
+        run.status = "completed" if status in {"ok", "pending"} else "failed"
     except Exception as exc:
         result, status = {"isError": True, "error": str(exc)[:500]}, "error"
         run.status, run.error_message = "failed", str(exc)[:500]

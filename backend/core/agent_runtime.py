@@ -235,6 +235,8 @@ class ToolSpec:
     required_permission: str
     accesses_course_data: bool
     has_file_side_effect: bool
+    requires_confirmation: bool = False
+    confirmation_binding: str = ''
 
 
 @dataclass
@@ -244,6 +246,7 @@ class ToolContext:
     permissions: frozenset[str] = frozenset()
     request_id: str = ""
     config_revision: int | None = None
+    confirmation_id: str | None = None
 
 
 class ModelAdapter:
@@ -314,7 +317,7 @@ class ToolRegistry:
         status = "error"
         try:
             result = await self._execute_authorized(name, arguments, context)
-            status = "error" if isinstance(result, dict) and result.get("isError") else "ok"
+            status = "pending" if isinstance(result, dict) and result.get("confirmation_required") else ("error" if isinstance(result, dict) and result.get("isError") else "ok")
             return result
         except PermissionError:
             status = "403"
@@ -339,6 +342,11 @@ class ToolRegistry:
         errors = list(Draft202012Validator(spec.input_schema).iter_errors(arguments))
         if errors:
             raise ValueError("工具参数无效: " + errors[0].message)
+        if spec.requires_confirmation:
+            from .tool_confirmation import authorize
+            pending = await sync_to_async(authorize)(spec, arguments, context)
+            if pending is not None:
+                return pending
         if function is None:
             raise RuntimeError("工具尚未绑定执行器")
         result = function(arguments, context)

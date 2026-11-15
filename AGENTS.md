@@ -12,6 +12,8 @@ SEC-08真实四步实验、模型虚假完成修正与教师课程审计见 repo
 
 本地k6三目标20VU×60秒对照、容量阶梯、ready片段GIN索引与备份迁移证据见 reports/bench.md。纯建索引未收益的运行同样保留；不能把单账号虚拟客户端、受理吞吐或短时探测当成多人真实批改容量。
 
+MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期与并发消费见 docs/mcp-confirmation-delivery.md，真实账号课程11与审核依据见 reports/review-mcp-confirmation.md；未知副作用的超时或崩溃不得自动重放。
+
 ## 每次修改
 
 - 先读关联规约，记录 Requirement 与受影响的正常、失败、边界路径。行为变化同步文档。

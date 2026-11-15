@@ -364,6 +364,7 @@ def agent_stream(request, thread_id):
                 tools = [t for t in tools if t["function"]["name"] != "search_course_knowledge"]
             allowed_names = {t["function"]["name"] for t in tools}
             total_calls = 0
+            awaiting_confirmation = False
             for round_number in range(1, 7):
                 await check_current()
                 if round_number == 6 or total_calls >= 12:
@@ -418,7 +419,7 @@ def agent_stream(request, thread_id):
                                 action='tool.candidate.denied', object_ref=str(name)[:200], status='403', request_id=request.request_id)
                             raise ValueError("工具不在本次候选集或已达到调用上限")
                         result = await asyncio.wait_for(registry.execute(name, arguments, context), timeout=45)
-                        status = "error" if isinstance(result, dict) and result.get("isError") else "ok"
+                        status = "pending" if isinstance(result, dict) and result.get("confirmation_required") else ("error" if isinstance(result, dict) and result.get("isError") else "ok")
                     except Exception as exc:
                         result = {"isError": True, "error": str(exc)[:500]}
                         status = "rejected" if isinstance(exc, (ValueError, PermissionError, KeyError)) else "error"
@@ -441,6 +442,15 @@ def agent_stream(request, thread_id):
                         await sync_to_async(event)(run, "artifact", payload)
                         yield f"event: artifact\ndata: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
                     messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result, ensure_ascii=False)})
+                    if status == "pending":
+                        awaiting_confirmation = True
+                        notice = "\n工具尚未执行。请核对下方确认卡片中的工具和完整参数，再选择确认或取消。"
+                        answer_parts.append(notice)
+                        await sync_to_async(event)(run, 'delta', {'text': notice})
+                        yield f"event: delta\ndata: {json.dumps({'text': notice}, ensure_ascii=False)}\n\n"
+                        break
+                if awaiting_confirmation:
+                    break
             else:
                 answer_parts.append("\n本次工具调用已达到上限。以上仅包含已取得的结果，尚未完成的步骤可在下一条消息继续。")
             await check_current()

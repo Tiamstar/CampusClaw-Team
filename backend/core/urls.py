@@ -1,4 +1,5 @@
 from . import index_views, coursework_views, telemetry_views, audit_views
+from . import confirmation_views
 from . import review_views
 from . import diagnostic_views
 from . import graph_views
@@ -13,6 +14,8 @@ from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('agent/threads/<int:thread_id>/confirmations/',confirmation_views.confirmations),
+    path('agent/threads/<int:thread_id>/confirmations/<uuid:confirmation_id>/',confirmation_views.action),
     path('courses/<int:course_id>/audit-events/', audit_views.events),
     path('courses/<int:course_id>/review-plans/', review_views.plans),
     path('review-plans/<int:plan_id>/', review_views.detail),

@@ -11,6 +11,17 @@ from .agent_runtime import ToolSpec
 from .mcp_client import rpc
 
 
+def current_mcp_binding(binding):
+    from .tool_confirmation import encoded
+    expected=json.loads(binding)
+    current=MCPServer.objects.filter(is_shared=True,id=expected['server_id'],connected=True).first()
+    tool=next((t for t in current.tools if t['name']==expected['tool']['name']),None) if current else None
+    if not tool:raise ValueError('MCP 服务器已断开或工具不再可用')
+    actual=encoded({'server_id':current.pk,'name':current.name,'url':current.url,'token_env':current.token_env,'tool':tool})
+    if actual!=binding:raise PermissionError('MCP定义已变化，请重新确认')
+    return current
+
+
 def skill_list(user):
     uploaded = [{"id": f"upload-{s.id}", "name": s.name, "description": s.description, "instructions": s.instructions,
                  "resources": s.resources, "tool_refs": s.tool_refs, "category": "我的上传", "icon": "↑", "builtin": False,
@@ -193,11 +204,11 @@ def configure_registry(registry, selected, servers):
     descriptions = {"run_skill_script": "在临时隔离容器中执行已绑定技能 scripts/ 下的 Python、JavaScript 或 Shell 脚本。参数用字符串数组传入。默认无网络，不可访问宿主文件，35 秒上限。"}
     for server, tool in servers:
         name = f"mcp_{server.id}_{tool['name']}"
-        def bind(server_id, tool_name):
+        from .tool_confirmation import encoded
+        binding=encoded({'server_id':server.pk,'name':server.name,'url':server.url,'token_env':server.token_env,'tool':tool})
+        def bind(server_id, tool_name, expected_binding):
             async def execute(args, context):
-                current = await sync_to_async(lambda: MCPServer.objects.filter(Q(is_shared=True), id=server_id).first())()
-                if not current or not current.connected or tool_name not in {t["name"] for t in current.tools}:
-                    raise ValueError("MCP 服务器已断开或工具不再可用")
+                current = await sync_to_async(current_mcp_binding)(expected_binding)
                 result, _ = await rpc(current, "tools/call", {"name": tool_name, "arguments": args})
                 await sync_to_async(assert_runtime_current)(context.user, context.thread, context.config_revision)
                 artifact_ids = []
@@ -236,7 +247,9 @@ def configure_registry(registry, selected, servers):
                     result["_artifact_ids"] = artifact_ids
                 return result
             return execute
-        registry.register(ToolSpec(name, "1.0", tool["inputSchema"], {"type": "object"}, "mcp.call", False, False), bind(server.id, tool["name"]))
+        # Remote annotations are advisory, not proof that a tool cannot write.
+        registry.register(ToolSpec(name, "1.0", tool["inputSchema"], {"type": "object"}, "mcp.call", False, False,
+            True,binding), bind(server.id, tool["name"],binding))
         descriptions[name] = f"{tool['name']}@{server.name}: {tool['description']}"
     return descriptions
 

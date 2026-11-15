@@ -1,0 +1,44 @@
+{
+  "synthetic_only": true,
+  "fixtures_retained": true,
+  "auto_confirmation": false,
+  "provider": "openai",
+  "course_id": 11,
+  "join_code": "89FFLNEE",
+  "threads": {
+    "teacher": 19,
+    "student": 20
+  },
+  "stream": "event: message_start\ndata: {\"run_id\": 23, \"message_id\": 61}\n\nevent: tool_call\ndata: {\"name\": \"mcp_1_formula_hint\", \"arguments\": {\"topic\": \"复合函数求导\"}, \"round\": 1, \"call_id\": \"call_f0ekwaxaksxdswl6r7nssqyi\"}\n\nevent: tool_result\ndata: {\"name\": \"mcp_1_formula_hint\", \"result\": {\"confirmation_required\": true, \"confirmation_id\": \"69880928-6b60-4f50-809e-d4efe809c663\", \"message\": \"等待用户核对工具和完整参数后确认；尚未执行。\"}, \"round\": 1, \"status\": \"pending\", \"duration_ms\": 23}\n\nevent: delta\ndata: {\"text\": \"\\n工具尚未执行。请核对下方确认卡片中的工具和完整参数，再选择确认或取消。\"}\n\nevent: delta\ndata: {\"text\": \"\\n\\n> 系统核验：本次对话未执行课程规则、成员权限或正式成绩修改；生成文档不代表这些操作已完成。\\n\\n\"}\n\nevent: message_end\ndata: {\"message_id\": 63, \"citations\": []}\n\n",
+  "model_pending": true,
+  "teacher_manual": {
+    "run_id": 24,
+    "name": "mcp_1_formula_hint",
+    "result": {
+      "confirmation_required": true,
+      "confirmation_id": "b3ddca4d-112f-4195-9d4e-c23fb1451707",
+      "message": "等待用户核对工具和完整参数后确认；尚未执行。"
+    },
+    "status": "pending",
+    "round": 1,
+    "duration_ms": 21
+  },
+  "before_browser": [
+    {
+      "id": "b3ddca4d-112f-4195-9d4e-c23fb1451707",
+      "thread_id": 19,
+      "status": "pending",
+      "started_at": null
+    },
+    {
+      "id": "69880928-6b60-4f50-809e-d4efe809c663",
+      "thread_id": 20,
+      "status": "pending",
+      "started_at": null
+    }
+  ],
+  "run_ids": [
+    24,
+    23
+  ]
+}

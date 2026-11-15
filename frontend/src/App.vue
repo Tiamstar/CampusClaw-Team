@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
 import AssistantStudio from './AssistantStudio.vue'
+import ToolConfirmations from './ToolConfirmations.vue'
 import MaterialIndexStatus from './MaterialIndexStatus.vue'
 import ForumWorkspace from './ForumWorkspace.vue'
 import QuizWorkspace from './QuizWorkspace.vue'
@@ -160,7 +161,7 @@ function handleProtectedLink(event: MouseEvent) {
                   <div class="agent-role">{{ item.role==='user'?'你':item.role==='assistant'?'AI':'工具' }}</div>
                   <div class="agent-content">
                     <AgentResponse v-if="item.role==='assistant'" :message="item" @open="previewFile=$event"/>
-                    <div v-else-if="item.role==='tool'" class="tool-result"><Wrench :size="14"/> {{ item.metadata.name }} 已完成</div>
+                    <div v-else-if="item.role==='tool'" class="tool-result"><Wrench :size="14"/> {{ item.metadata.name }} · 工具返回（执行状态见确认记录）</div>
                     <div v-else class="message-source">{{ item.content }}</div>
                     <div v-if="item.attachments?.length" class="message-attachments"><span v-for="attachment in item.attachments" :key="attachment.id"><Paperclip :size="13"/> {{ attachment.name }}</span></div>
 
@@ -169,6 +170,7 @@ function handleProtectedLink(event: MouseEvent) {
                 </article>
                 <article v-if="agentStreaming" class="agent-message assistant"><div class="agent-role">AI</div><div class="agent-content streaming markdown-body" v-html="renderMarkdown(agentStreaming)"></div></article>
               </div>
+              <ToolConfirmations :thread-id="activeThread.id" :refresh-key="agentBusy" :disabled="agentBusy" @done="loadAgent"/>
               <div class="agent-composer">
                 <div class="composer-box">
                   <div v-if="agentFiles.length" class="pending-files"><span v-for="(file,index) in agentFiles" :key="`${file.name}-${index}`"><Paperclip :size="13"/> {{ file.name }} <small>{{ size(file.size) }}</small><button title="移除附件" :aria-label="`移除 ${file.name}`" @click="removeAgentFile(index)"><X :size="13"/></button></span></div>
