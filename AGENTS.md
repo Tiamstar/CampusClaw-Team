@@ -6,7 +6,7 @@
 
 E1 测验已实施与自测，见 docs/quiz-delivery.md；E4 成绩册第一阶段见 docs/gradebook-delivery.md，学情与只读 MCP 已实现和自测，见 docs/learning-mcp-delivery.md；学情诊断与同版 HTML/PDF 已本地实现与自测，见 docs/diagnostic-delivery.md。E3 论坛已实施到本地可用，证据和限制见 docs/forum-delivery.md；E5 图谱抽取、校对、无环审批和指标着色见 docs/graph-delivery.md；复习路径与站内间隔提醒已实现、自测，见 docs/review-path-delivery.md。用户指定的两个本地验收账号产生的课程、帖子、草稿、提交和批改记录应保留供用户查看，不清理这些验收记录。密码不写入仓库或公开证据。
 
-资料持久化索引、取消/重试、后台恢复与真实账号证据见 docs/material-index-delivery.md；AI 作业批改与错题闭环仍待实现。课程公共助手权限、版本检查和私人内容保留见 docs/course-assistant-delivery.md。当前内置目录已转为教学技能，来源与适配规则见 docs/teaching-skills-research.md。修改技能须保留来源和许可，并保持用户上传技能的私有性及旧绑定兼容。常规检查使用 mock，真实模型验证通过显式 --real 命令执行。
+资料持久化索引、取消/重试、后台恢复与真实账号证据见 docs/material-index-delivery.md；AI 作业批改草稿、逐项教师复核、个人错题与讲解见 docs/coursework-ai-delivery.md，实际交付状态与限制以该记录为准。课程公共助手权限、版本检查和私人内容保留见 docs/course-assistant-delivery.md。当前内置目录已转为教学技能，来源与适配规则见 docs/teaching-skills-research.md。修改技能须保留来源和许可，并保持用户上传技能的私有性及旧绑定兼容。常规检查使用 mock，真实模型验证通过显式 --real 命令执行。
 
 ## 每次修改
 

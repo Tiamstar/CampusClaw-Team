@@ -35,7 +35,7 @@ it('sends explicit grade publication preference and current revision',async()=>{
     return assignment as any
   })
   const view=mount(AssignmentWorkspace,{props:{assignmentId:1,isTeacher:true}}); await flushPromises()
-  await view.get('input[type=number]').setValue('88');await view.get('input[type=checkbox]').setValue(true)
+  await view.get('.homework-grade-form input[type=number]').setValue('88');await view.get('.homework-grade-form input[type=checkbox]').setValue(true)
   await view.get('form').trigger('submit');await flushPromises()
   expect(calls[0]).toMatchObject({path:'submission-versions/3/grade/',data:{score:'88',published:true,expected_revision:0}}); view.unmount()
 })

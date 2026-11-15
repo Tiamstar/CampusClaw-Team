@@ -142,3 +142,7 @@ GRD-004沿用 `/api/`：课程下 `diagnostic-settings/` GET/PUT、`diagnostic-r
 `index-tasks/{id}/` GET 查询，POST 管理（action=cancel/retry、expected_revision，retry 可携带新 request_key）；`materials/{id}/index-tasks/?page=1` GET 每页 20 条历史。仅本课程任课教师可查内部任务和管理，学生仅从资料列表读取安全概要。重试创建新任务并保留 retry_of_id，旧任务终态不覆盖。一个资料同时最多一个 queued/running 任务；取消立即标记终态，执行中外部调用可能继续，但迟到结果不会生效。查询型 GET 不恢复任务、不调用模型。
 
 数据库持久队列和独立 Linux Docker index-worker 每 2 秒扫描、原子领取。解析/嵌入最多 150 秒，租约 180 秒；到期由后续 worker 扫描标记失败，授权教师显式重试，不自动无限请求外部服务。写入完整切片与向量采用单事务；失败保留原片段但 entry 不可用于当前检索。详见 [索引交付](material-index-delivery.md)。
+
+## 作业 AI 与个人错题契约（2026-11-16）
+
+批改建议/讲解由 CourseworkTask 和独立 coursework-worker 持久化执行，HTTP 202，支持请求幂等、取消、重试和过期恢复。教师填写逐项 rubric，模型只给建议；原评分接口可提交 ai_task_id/逐项复核，明确保存才产生正式评分，公开/撤回仍走原接口。评分修订冻结 reviewed_items 与来源任务，学生只见当前公开版本。个人错题按本人最新提交和当前公开评分投影，讲解在补交/改分/撤回后失效。课程 CourseworkSettings 由本班教师保存，GET 不创建记录。接口、限制及证据见 [作业 AI 闭环](coursework-ai-delivery.md)。

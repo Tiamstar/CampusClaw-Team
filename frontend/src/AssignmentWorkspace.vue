@@ -2,7 +2,8 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronLeft, Upload, X, RefreshCw, Check, Eye, EyeOff } from 'lucide-vue-next'
 import FileCard from './FileCard.vue'
-import { api, type Assignment, type FileInfo, type Submission, type SubmissionStatus, type Version } from './api'
+import CourseworkAI from './CourseworkAI.vue'
+import { api, type Assignment, type FileInfo, type Submission, type SubmissionStatus, type Version, type ReviewedItem } from './api'
 
 const props = defineProps<{assignmentId:number;isTeacher:boolean}>()
 const emit = defineEmits<{back:[];preview:[file:FileInfo]}>()
@@ -10,6 +11,8 @@ const assignment = ref<Assignment|null>(null), roster = ref<Submission[]>([])
 const loading = ref(true), busy = ref(false), error = ref(''), notice = ref('')
 const answer = ref(''), attachments = ref<File[]>([]), submissionKey = ref('')
 const activeStudent = ref<number|null>(null), filter = ref('all')
+const aiSelection = ref<{task_id:number;items:ReviewedItem[]}|null>(null)
+function adoptAI(value:{task_id:number;items:ReviewedItem[]}|null){aiSelection.value=value;if(value){score.value=(value.items.reduce((n,r)=>n+Math.round(Number(r.score)*100),0)/100).toFixed(2);feedback.value=value.items.map(r=>r.title+'：'+r.feedback).join('\n')}}
 const score = ref<string|number>(''), feedback = ref(''), reason = ref(''), publish = ref(false)
 const labels:Record<SubmissionStatus,string> = {unsubmitted:'未提交',submitted:'已提交',pending_review:'待批改',graded:'已批改'}
 const fmt = (date:string) => new Date(date).toLocaleString('zh-CN',{dateStyle:'medium',timeStyle:'short'})
@@ -28,6 +31,7 @@ const accept = computed(() => assignment.value?.allowed_extensions.map(value => 
 const totalBytes = computed(() => attachments.value.reduce((sum,file) => sum+file.size,0))
 
 function fillGrade() {
+  aiSelection.value = null
   score.value = latest.value?.grade?.score ?? ''
   feedback.value = latest.value?.grade?.feedback || ''
   publish.value = latest.value?.grade_published || false
@@ -95,6 +99,7 @@ async function saveGrade() {
   await action(async () => {
     await api(`submission-versions/${latest.value!.id}/grade/`,'POST',{
       score:String(score.value), feedback:feedback.value, reason:reason.value,
+      ...(aiSelection.value ? {ai_task_id:aiSelection.value.task_id,reviewed_items:aiSelection.value.items.map(r=>({id:r.id,score:r.score,feedback:r.feedback}))} : {}),
       published:publish.value, expected_revision:latest.value!.grading_revision || 0,
     })
     await load(); notice.value = publish.value ? '批改已保存，成绩与评语已公开' : '批改已保存，成绩与评语暂不公开'
@@ -122,7 +127,7 @@ onMounted(load)
       <header class="assignment-hero"><h2>{{assignment.title}}</h2><div class="chips"><span class="chip" :class="deadlinePassed?'closed':'open'">{{deadlinePassed?(assignment.allow_late?'允许迟交':'已截止'):'进行中'}}</span><span class="chip">截止 {{fmt(assignment.due_at)}}</span><span class="chip">满分 {{assignment.max_score}}</span><span v-if="!isTeacher" class="chip">{{labels[assignment.submission_status || 'unsubmitted']}}</span></div></header>
       <section class="pane homework-instructions"><h3>作业说明</h3><p class="description">{{assignment.description || '教师未填写额外说明'}}</p><FileCard v-if="assignment.attachment" :file="assignment.attachment" @preview="emit('preview',$event)"/></section>
 
-      <div v-if="!isTeacher" class="homework-student-layout">
+      <CourseworkAI v-if="!isTeacher&&myLatest" :key="myLatest.id+':'+myLatest.grade?.revision" :assignment="assignment" :version="myLatest" :is-teacher="false"/><div v-if="!isTeacher" class="homework-student-layout">
         <section class="pane"><h3>{{myVersions.length?'补交新版本':'提交作业'}}</h3>
           <form @submit.prevent="submit">
             <label>文字作答<textarea v-model="answer" rows="10" :maxlength="assignment.submission_limits.max_text_length" :disabled="busy||!canSubmit" placeholder="可以直接填写答案，也可以搭配附件提交" @input="submissionKey=''"></textarea></label>
@@ -160,15 +165,15 @@ onMounted(load)
           <template v-if="latest">
             <div v-if="latest.text_content" class="homework-answer">{{latest.text_content}}</div>
             <FileCard v-for="file in latest.files" :key="file.id" :file="file" @preview="emit('preview',$event)"/>
-            <div class="homework-review-heading"><h3>教师批改</h3><button v-if="latest.status==='submitted'" class="secondary" :disabled="busy" @click="beginReview">开始批改</button><span v-if="latest.grade" class="muted">{{latest.grade_published?'成绩已公开':'成绩未公开'}}</span></div>
-            <form class="homework-grade-form" @submit.prevent="saveGrade">
+            <CourseworkAI :key="latest.id+':'+latest.grading_revision" :assignment="assignment" :version="latest" :is-teacher="true" @adopt="adoptAI"/><div class="homework-review-heading"><h3>教师批改</h3><button v-if="latest.status==='submitted'" class="secondary" :disabled="busy" @click="beginReview">开始批改</button><span v-if="latest.grade" class="muted">{{latest.grade_published?'成绩已公开':'成绩未公开'}}</span></div>
+            <p v-if="!aiSelection" class="hint">当前为人工整体评分，保存时不沿用旧逐项错题；如需逐项记录，请先采用 AI 草稿并复核。</p><form class="homework-grade-form" @submit.prevent="saveGrade">
               <label>分数（满分 {{assignment.max_score}}）<input v-model="score" type="number" min="0" :max="assignment.max_score" step="0.01" required :disabled="busy" aria-label="作业分数"></label>
               <label>批改评语<textarea v-model="feedback" rows="5" maxlength="10000" :disabled="busy" placeholder="指出完成情况、具体问题和改进建议"></textarea></label>
               <label v-if="latest.grade">修改说明（改分时必填）<input v-model="reason" maxlength="500" :disabled="busy" placeholder="例如：复核后补计步骤分"></label>
               <label class="check"><input v-model="publish" type="checkbox" :disabled="busy">保存后向该学生公开成绩与评语</label>
               <div class="homework-grade-actions"><button class="primary" :disabled="busy"><Check :size="16"/>{{busy?'正在保存…':'保存批改'}}</button><button v-if="latest.grade" type="button" class="secondary" :disabled="busy" @click="setPublication(!latest.grade_published)"><EyeOff v-if="latest.grade_published" :size="16"/><Eye v-else :size="16"/>{{latest.grade_published?'撤回公开':'公开成绩'}}</button></div>
             </form>
-            <details v-if="latest.grade_history?.length" class="homework-version"><summary>批改与公开记录（{{latest.grade_history.length}}）</summary><div v-for="entry in latest.grade_history" :key="entry.revision" class="homework-history">第 {{entry.revision}} 次 · {{entry.score}} 分 · {{entry.published?'公开':'未公开'}}<small>{{fmt(entry.created_at)}} {{entry.reason}}</small><p v-if="entry.feedback">{{entry.feedback}}</p></div></details>
+            <details v-if="latest.grade_history?.length" class="homework-version"><summary>批改与公开记录（{{latest.grade_history.length}}）</summary><div v-for="entry in latest.grade_history" :key="entry.revision" class="homework-history">第 {{entry.revision}} 次 · {{entry.score}} 分 · {{entry.published?'公开':'未公开'}}<small>{{fmt(entry.created_at)}} {{entry.reason}}</small><p v-if="entry.feedback">{{entry.feedback}}</p><small v-if="entry.actor_id">复核账号 #{{entry.actor_id}}<span v-if="entry.ai_task_id"> · AI 草稿 #{{entry.ai_task_id}}</span></small><div v-for="item in entry.reviewed_items||[]" :key="item.id"><strong>{{item.title}} · {{item.score}} / {{item.maximum}}</strong><p>{{item.feedback}}</p></div></div></details>
             <details v-if="student.versions.length>1" class="homework-version"><summary>历史提交（{{student.versions.length-1}}）</summary><section v-for="version in student.versions.slice(1)" :key="version.id" class="homework-history"><strong>第 {{version.number}} 版 · {{fmt(version.submitted_at)}}</strong><p v-if="version.text_content" class="homework-answer">{{version.text_content}}</p><FileCard v-for="file in version.files" :key="file.id" :file="file" @preview="emit('preview',$event)"/><p v-if="version.grade">历史成绩 {{version.grade.score}} / {{assignment.max_score}}</p></section></details>
           </template>
           <p v-else class="muted">该学生尚未提交，提交后即可查看答案和批改。</p>

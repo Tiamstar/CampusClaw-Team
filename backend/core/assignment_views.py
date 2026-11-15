@@ -13,7 +13,7 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Assignment, Membership, Submission, SubmissionGradeRevision, SubmissionVersion
+from .models import Assignment, Membership, Submission, SubmissionGradeRevision, SubmissionVersion, CourseworkTask, Course
 from .views import EXTENSIONS, MAX_BYTES, fail, file_data, member, store_file, validate_file
 
 MAX_FILES = 10
@@ -35,9 +35,12 @@ def version_data(version, teacher=False):
     grade = None
     if teacher or version.published_at:
         if version.score is not None:
+            formal = next((r for r in version.grade_revisions.all() if r.revision == version.grading_revision), None)
             grade = {'score': str(version.score), 'feedback': version.feedback,
                      'graded_at': version.graded_at, 'published': bool(version.published_at),
-                     'published_at': version.published_at, 'revision': version.grading_revision}
+                     'published_at': version.published_at, 'revision': version.grading_revision,
+                     'reviewed_items': formal.reviewed_items if formal else [],
+                     'ai_task_id': formal.ai_task_id if formal else None}
     data = {'id': version.id, 'number': version.number, 'submitted_at': version.submitted_at,
             'is_late': version.is_late, 'text_content': version.text_content,
             'files': [file_data(item) for item in files],
@@ -48,7 +51,8 @@ def version_data(version, teacher=False):
         data['grading_revision'] = version.grading_revision
         data['grade_history'] = [
             {'revision': row.revision, 'score': str(row.score), 'feedback': row.feedback,
-             'published': row.published, 'reason': row.reason, 'created_at': row.created_at}
+             'published': row.published, 'reason': row.reason, 'created_at': row.created_at,
+             'actor_id': row.actor_id, 'ai_task_id': row.ai_task_id, 'reviewed_items': row.reviewed_items}
             for row in version.grade_revisions.all()
         ]
     return data
@@ -60,7 +64,7 @@ def version_queryset():
 
 def assignment_data(assignment, user, role=None):
     data = {'id': assignment.id, 'title': assignment.title, 'description': assignment.description,
-            'due_at': assignment.due_at, 'allow_late': assignment.allow_late,
+            'course_id': assignment.course_id, 'due_at': assignment.due_at, 'allow_late': assignment.allow_late,
             'allowed_extensions': assignment.allowed_extensions, 'max_file_size_mb': assignment.max_file_size_mb,
             'max_score': str(assignment.max_score), 'created_at': assignment.created_at,
             'attachment': file_data(assignment.attachment) if assignment.attachment else None,
@@ -261,12 +265,15 @@ def start_review(request, version_id):
     return Response(version_data(version, teacher=True))
 
 
-def save_grade_revision(version, actor, reason):
+def save_grade_revision(version, actor, reason, reviewed_items=None, ai_task=None):
+    if reviewed_items is None:
+        old = version.grade_revisions.filter(revision=version.grading_revision).first()
+        reviewed_items, ai_task = (old.reviewed_items, old.ai_task) if old else ([], None)
     version.grading_revision += 1
     version.save()
     SubmissionGradeRevision.objects.create(
         version=version, revision=version.grading_revision, score=version.score, feedback=version.feedback,
-        published=bool(version.published_at), actor=actor, reason=reason,
+        published=bool(version.published_at), actor=actor, reason=reason, reviewed_items=reviewed_items, ai_task=ai_task,
     )
 
 
@@ -287,17 +294,32 @@ def grade_submission(request, version_id):
     if not isinstance(published, bool) or type(revision) is not int:
         return fail('公开选项或批改版本无效')
     with transaction.atomic():
+        Course.objects.select_for_update().get(pk=initial.submission.assignment.course_id)
+        if not member(request.user, initial.submission.assignment.course_id, 'teacher'):
+            return fail('任课教师权限已撤销', 403)
         Submission.objects.select_for_update().get(pk=initial.submission_id)
         version = SubmissionVersion.objects.select_for_update().get(pk=initial.id)
         if not current_version(version) or version.grading_revision != revision:
             return fail('提交或批改记录已更新，请刷新后重试', 409)
         if version.score is not None and version.score != score and not reason.strip():
             return fail('修改成绩时请填写修改说明')
+        items, ai_task = [], None
+        task_id = request.data.get('ai_task_id')
+        if task_id is not None:
+            if type(task_id) is not int: return fail('AI 草稿标识无效')
+            ai_task = CourseworkTask.objects.select_for_update().filter(pk=task_id, version=version).first()
+            if ai_task is None: return fail('AI 草稿不存在', 404)
+            try:
+                from .coursework_service import reviewed_items
+                items = reviewed_items(ai_task, request.data.get('reviewed_items'), score, version)
+            except ValueError as exc: return fail(str(exc), 409)
+        elif request.data.get('reviewed_items'):
+            return fail('逐项复核须关联本次 AI 草稿')
         version.score, version.feedback = score, feedback
         version.graded_by, version.graded_at = request.user, timezone.now()
         version.review_started_at = version.review_started_at or version.graded_at
         version.published_at = version.graded_at if published else None
-        save_grade_revision(version, request.user, reason.strip())
+        save_grade_revision(version, request.user, reason.strip(), items, ai_task)
     return Response(version_data(version, teacher=True))
 
 
@@ -307,6 +329,9 @@ def publish_grade(request, version_id):
     if not isinstance(request.data, Mapping) or not isinstance(request.data.get('published'), bool) or type(request.data.get('expected_revision')) is not int:
         return fail('公开选项或批改版本无效')
     with transaction.atomic():
+        Course.objects.select_for_update().get(pk=initial.submission.assignment.course_id)
+        if not member(request.user, initial.submission.assignment.course_id, 'teacher'):
+            return fail('任课教师权限已撤销', 403)
         Submission.objects.select_for_update().get(pk=initial.submission_id)
         version = SubmissionVersion.objects.select_for_update().get(pk=initial.id)
         if not current_version(version) or version.grading_revision != request.data['expected_revision']:

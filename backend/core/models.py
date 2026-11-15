@@ -439,6 +439,8 @@ class SubmissionGradeRevision(models.Model):
     published = models.BooleanField(default=False)
     actor = models.ForeignKey(User, on_delete=models.PROTECT)
     reason = models.CharField(max_length=500, blank=True)
+    reviewed_items = models.JSONField(default=list)
+    ai_task = models.ForeignKey('core.CourseworkTask', null=True, blank=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -464,3 +466,4 @@ from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource,
 
 from .review_models import ReviewPlan, ReviewReminder
 from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion
+from .coursework_models import CourseworkSettings, CourseworkTask
