@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from .forum_views import api_view, access
 from .views import fail
 from .models import GradePolicy, GradeSnapshot
-from .gradebook_service import collect, validate_items, snapshot_data
+from .gradebook_service import collect, validate_items, snapshot_data, authorized_grades
 from .audit import record_audit
 
 
@@ -57,12 +57,7 @@ def gradebook(request, course_id):
                           'rows': current['rows'], 'created_by': request.user})
             audit(request, course_id, 'gradebook.snapshot', snapshot.id)
         return Response(snapshot_data(snapshot, current), status=201 if created else 200)
-    current = collect(course_id)
-    snapshots = GradeSnapshot.objects.filter(course_id=course_id).order_by('-id')
-    if teacher:
-        return Response({'current': current, 'snapshots': [snapshot_data(s, current) for s in snapshots[:20]]})
-    visible = snapshots.filter(published_at__isnull=False, fingerprint=current['fingerprint']).first() if current['fingerprint'] else None
-    return Response({'snapshot': snapshot_data(visible, current, request.user.id) if visible else None})
+    return Response(authorized_grades(request.user, course_id))
 
 
 @api_view(['POST'])

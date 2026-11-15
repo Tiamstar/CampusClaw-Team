@@ -97,3 +97,15 @@ def snapshot_data(snapshot, current, student_id=None):
     return {'id': snapshot.id, 'policy_revision': snapshot.policy_revision, 'items': snapshot.items,
             'rows': rows, 'fingerprint': visible_fingerprint, 'created_at': snapshot.created_at,
             'published_at': snapshot.published_at, 'stale': stale}
+
+
+def authorized_grades(user, course_id):
+    from .forum_views import access
+    from .models import GradeSnapshot
+    teacher = access(user, course_id).role == 'teacher'
+    current = collect(course_id)
+    snapshots = GradeSnapshot.objects.filter(course_id=course_id).order_by('-id')
+    if teacher:
+        return {'current': current, 'snapshots': [snapshot_data(s, current) for s in snapshots[:20]]}
+    visible = snapshots.filter(published_at__isnull=False, fingerprint=current['fingerprint']).first() if current['fingerprint'] else None
+    return {'snapshot': snapshot_data(visible, current, user.id) if visible else None}

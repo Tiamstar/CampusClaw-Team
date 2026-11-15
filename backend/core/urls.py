@@ -1,3 +1,5 @@
+from . import data_mcp
+from . import learning_views
 from . import gradebook_views
 from django.urls import path
 from . import views, assignment_views, file_views
@@ -7,6 +9,8 @@ from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('mcp/course-data/', data_mcp.endpoint),
+    path('courses/<int:course_id>/learning/', learning_views.analytics),
     path('courses/<int:course_id>/grade-policy/', gradebook_views.policy),
     path('courses/<int:course_id>/gradebook/', gradebook_views.gradebook),
     path('grade-snapshots/<int:snapshot_id>/publication/', gradebook_views.publication),

@@ -1,10 +1,10 @@
 # CampusClaw Team · v0.1.0 基础版
 
-采用个人项目 `new-campus-claw` 的 `5fb4aa7af535e5b0be463e8c4e4ad4584098c2af` 作为第一轮迭代基座，增加安全回归、审计、依赖锁定与自动检查。基础版支持账号、课程成员、资料与作业提交、课程 Agent、技能及 MCP。E1 测验与 E3 论坛已在本地实施、自测；E4 已实现权重成绩册、快照与 Excel，学情报告及其余扩展继续按规约推进。成员独立验收与公网复验待执行。
+采用个人项目 `new-campus-claw` 的 `5fb4aa7af535e5b0be463e8c4e4ad4584098c2af` 作为第一轮迭代基座，增加安全回归、审计、依赖锁定与自动检查。基础版支持账号、课程成员、资料与作业提交、课程 Agent、技能及 MCP。E1 测验与 E3 论坛已在本地实施、自测；E4 已实现权重成绩册、快照与 Excel，已补充个人/班级学情及三个真实只读 MCP 工具；诊断报告及其余扩展继续按规约推进。成员独立验收与公网复验待执行。
 
 [源码与第一版交付范围](docs/baseline-v0.1.0.md) · [第 9、10 课检查结论](report.md) · [需求与验收](docs/requirements-traceability.md) · [贡献指南](CONTRIBUTING.md)
 
-本地扩展证据：[安全与公式](docs/security-math.md) · [论坛](docs/forum-delivery.md) · [测验](docs/quiz-delivery.md) · [成绩册第一阶段](docs/gradebook-delivery.md)
+本地扩展证据：[安全与公式](docs/security-math.md) · [论坛](docs/forum-delivery.md) · [测验](docs/quiz-delivery.md) · [成绩册第一阶段](docs/gradebook-delivery.md) · [学情与 MCP](docs/learning-mcp-delivery.md)
 
 ## 技术栈
 
