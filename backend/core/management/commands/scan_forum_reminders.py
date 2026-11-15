@@ -2,6 +2,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections
 from core.forum_service import scan_reminders
+from core.quiz_service import expire_attempts
 
 
 class Command(BaseCommand):
@@ -14,6 +15,7 @@ class Command(BaseCommand):
         while True:
             try:
                 self.stdout.write(f'Created {scan_reminders()} forum reminders')
+                self.stdout.write(f'Submitted {expire_attempts()} expired quiz attempts')
             except Exception as exc:
                 if not options['loop']:
                     raise

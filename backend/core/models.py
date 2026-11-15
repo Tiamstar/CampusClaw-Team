@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 from pgvector.django import VectorField
+from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion
 
 
 class AuthRateLimit(models.Model):

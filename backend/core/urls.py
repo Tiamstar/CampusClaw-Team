@@ -2,9 +2,23 @@ from django.urls import path
 from . import views, assignment_views, file_views
 from . import agent_views, platform_views
 from . import forum_views
+from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('courses/<int:course_id>/questions/',quiz_views.questions),
+    path('questions/<int:question_id>/',quiz_views.question_detail),
+    path('courses/<int:course_id>/quizzes/',quiz_views.quizzes),
+    path('quizzes/<int:quiz_id>/publish/',quiz_views.publish_quiz),
+    path('quizzes/<int:quiz_id>/attempts/',quiz_views.attempts),
+    path('quizzes/<int:quiz_id>/statistics/',quiz_views.statistics),
+    path('quiz-attempts/<int:attempt_id>/',quiz_views.attempt_detail),
+    path('quiz-attempts/<int:attempt_id>/answers/',quiz_views.save_answers),
+    path('quiz-attempts/<int:attempt_id>/submit/',quiz_views.submit),
+    path('quiz-attempts/<int:attempt_id>/review/',quiz_views.review),
+    path('quiz-attempts/<int:attempt_id>/suggestion/',quiz_views.suggestion),
+    path('quiz-attempts/<int:attempt_id>/images/<int:question_id>/',quiz_views.upload_image),
+    path('quiz-images/<int:image_id>/',quiz_views.answer_image),
     path('courses/<int:course_id>/forum/settings/',forum_views.config),
     path('courses/<int:course_id>/forum/points/',forum_views.points),
     path('courses/<int:course_id>/forum/posts/',forum_views.posts),
