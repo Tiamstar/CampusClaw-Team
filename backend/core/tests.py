@@ -231,7 +231,9 @@ class AgentRuntimeTests(TransactionTestCase):
         self.assertEqual(body.count('event: artifact\n'), 2)
         self.assertLess(body.index('event: artifact\n'), body.index('event: message_end\n'))
         assistant = self.thread.messages.get(role='assistant')
-        self.assertEqual(assistant.content, answer)
+        from .agent_views import COURSE_ACTION_NOTICE
+        self.assertEqual(assistant.content, answer + COURSE_ACTION_NOTICE)
+        self.assertIn('本次对话未执行', assistant.metadata['display_content'])
         self.assertIn('前文', assistant.metadata['display_content'])
         self.assertIn('后文', assistant.metadata['display_content'])
         self.assertNotIn('<html', assistant.metadata['display_content'])

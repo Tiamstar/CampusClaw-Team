@@ -8,6 +8,8 @@ E1 测验已实施与自测，见 docs/quiz-delivery.md；E4 成绩册第一阶�
 
 资料持久化索引、取消/重试、后台恢复与真实账号证据见 docs/material-index-delivery.md；AI 作业批改草稿、逐项教师复核、个人错题与讲解见 docs/coursework-ai-delivery.md，实际交付状态与限制以该记录为准。三项技能统一开关、私有解题引导、真实网关用量和教师运行监控见 docs/teaching-skills-monitor-delivery.md；未上报用量不得当作零，演示调用不得计为真实服务证据。课程公共助手权限、版本检查和私人内容保留见 docs/course-assistant-delivery.md。当前内置目录已转为教学技能，来源与适配规则见 docs/teaching-skills-research.md。修改技能须保留来源和许可，并保持用户上传技能的私有性及旧绑定兼容。常规检查使用 mock，真实模型验证通过显式 --real 命令执行。
 
+SEC-08真实四步实验、模型虚假完成修正与教师课程审计见 reports/sec08-experiment.md 和 reports/review-sec08.md；初测不良表现与复测均保留，不把模型观察或强制重放混作同一证据。
+
 ## 每次修改
 
 - 先读关联规约，记录 Requirement 与受影响的正常、失败、边界路径。行为变化同步文档。

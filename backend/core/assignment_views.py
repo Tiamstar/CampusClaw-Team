@@ -243,6 +243,10 @@ def submit(request, assignment_id):
 def teacher_version(request, version_id):
     version = get_object_or_404(SubmissionVersion.objects.select_related('submission__assignment'), pk=version_id)
     if not member(request.user, version.submission.assignment.course_id, 'teacher'):
+        from .audit import record_audit
+        record_audit(actor_id=request.user.pk, course_id=version.submission.assignment.course_id,
+                     action='grade.write.denied', object_ref=f'version:{version.pk}', status='403',
+                     request_id=request.request_id)
         raise PermissionDenied('仅任课教师可批改')
     return version
 

@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { api } from './api'
 import { renderMarkdown } from './htmlArtifacts'
+import CourseAudit from './CourseAudit.vue'
 const props=defineProps<{courseId:number;isTeacher:boolean}>()
 type Config={guidance_enabled:boolean;grading_enabled:boolean;explanation_enabled:boolean;revision:number}
 type Task={id:number;question:string;status:string;phase:string;revision:number;current:boolean;error:string;skill_id:string;settings_revision:number;result:{explanation?:string;citations?:{material_id:number;chunk_id:number;title:string;excerpt:string}[]}}
@@ -49,6 +50,7 @@ onBeforeUnmount(()=>{alive=false;serial++;window.clearInterval(timer)})
 <h4>队列采样曲线（{{monitor.curve_interval==='hour_average'?'每小时平均':'每分钟采样'}}）</h4><p v-if="!monitor.queue_curve.length">暂无队列采样；后台启动后记录，不回填历史。</p><div v-for="m in monitor.skills" :key="m.skill_id"><p>{{labels[m.kind]}}</p><div class="queue-curve" :aria-label="labels[m.kind]+'队列采样'"><div v-for="(s,i) in monitor.queue_curve.filter(s=>s.skill_id===m.skill_id)" :key="i" class="sample" :title="new Date(s.time).toLocaleString('zh-CN')+' 排队 '+s.queued+' 执行 '+s.running"><span :style="{height:Math.min(80,s.queued*16)+'px'}"></span><i :style="{height:Math.min(80,s.running*16)+'px'}"></i></div></div></div><p class="hint">绿色：排队；蓝色：执行。每条采样可悬停查看时间与数值，高于 5 项的柱高封顶。</p>
 <h4>站内运行告警</h4><p>近 15 分钟：业务失败率 &gt;20%（至少 5 项）；模型 P95 &gt;15 秒（至少 5 次）；排队等待 &gt;60 秒。每次状态变化记录一次。</p><p v-if="!monitor.alerts.length">暂无触发记录。</p><p v-for="a in monitor.alerts" :key="a.id">{{a.skill_id}} · {{labels[a.rule]}} · {{a.firing?'触发中':'已恢复'}} · {{a.value.toFixed(2)}} / 阈值 {{a.threshold}} · 样本 {{a.sample_size}}</p><details><summary>告警状态历史（当前窗口最近 50 条）</summary><p v-if="!monitor.events.length">暂无状态变化。</p><p v-for="e in monitor.events" :key="e.id">{{new Date(e.created_at).toLocaleString('zh-CN')}} · {{e.alert__skill_id}} · {{labels[e.alert__rule]}} · {{e.firing?'触发':'恢复'}}</p></details>
 </template></section>
+<CourseAudit v-if="isTeacher" :course-id="courseId" />
 </section>
 </template>
 <style scoped>
