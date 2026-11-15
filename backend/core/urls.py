@@ -1,3 +1,4 @@
+from . import review_views
 from . import graph_views
 from . import data_mcp
 from . import learning_views
@@ -10,6 +11,10 @@ from . import quiz_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('courses/<int:course_id>/review-plans/', review_views.plans),
+    path('review-plans/<int:plan_id>/', review_views.detail),
+    path('review-plans/<int:plan_id>/action/', review_views.action),
+    path('review-reminders/<int:reminder_id>/', review_views.reminder),
     path('courses/<int:course_id>/graph/', graph_views.graph),
     path('courses/<int:course_id>/graph/config/', graph_views.config),
     path('courses/<int:course_id>/graph/candidates/', graph_views.candidates),

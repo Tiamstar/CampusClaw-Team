@@ -83,6 +83,8 @@ services:
   forum-worker:
     image: campusclaw-team-backend
     environment: *backend-environment
+    volumes:
+      - uploads:/app/media:ro
     depends_on:
       backend: {condition: service_healthy}
     restart: unless-stopped

@@ -125,3 +125,7 @@ PostgreSQL + 底座检索存储 + 受控文件存储
 - 拟定 HTTP 语义：未认证 401；角色不允许 403；不可见对象或不存在 404；字段校验 400；版本/状态/幂等冲突 409；限流 429；外部依赖失败 503。接入后与底座保持一致并冻结测试。
 - 引用最小字段：`material_id、material_version、page_or_chunk、course_context、evidence_id`。展示链接时再次授权；删除后显示失效，不重新指向其他文件。
 - AI 产物另存 `task_id、model_id、skill_version、data_snapshot_id、reviewer、reviewed_at`；无证据的结论不得伪造出处。
+
+## 已冻结的复习接口（2026-11-16）
+
+KNO-004 实际沿用 `/api/`，非上表拟定的 v1 前缀。学生本人通过 `courses/{id}/review-plans/` POST 创建持久化排队任务，GET分页查询；`review-plans/{id}/`读取固定窗口与依据，`action/` POST确认/调整/取消，携带整数 expected_revision。确认还需 point_ids 和 schedule（timezone/start_date/local_time/offset_days），未确认不创建提醒。`review-reminders/{id}/` POST标记完成或取消；他人及教师无权管理学生个人计划。依据变化返回409且暂停旧待办，校验错误400，角色或成员错误403。完整数据、锁顺序、展示边界与实际验证见 [复习路径交付](review-path-delivery.md)。

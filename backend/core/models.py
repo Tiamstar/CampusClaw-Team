@@ -419,3 +419,5 @@ class AuditEvent(models.Model):
 from .gradebook_models import GradePolicy, GradeSnapshot
 
 from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource, GraphVersion
+
+from .review_models import ReviewPlan, ReviewReminder
