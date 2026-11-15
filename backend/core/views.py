@@ -18,7 +18,7 @@ from asgiref.sync import async_to_sync
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle
+from .auth_throttle import AuthThrottle, CodeThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .models import Assignment, Course, EmailCode, Material, Membership, StoredFile, Submission, SubmissionVersion, TeacherInvite, User, token_code
@@ -27,11 +27,6 @@ from .file_access import authorized_file, preview_info
 
 EXTENSIONS = {"doc", "docx", "pdf", "zip", "xls", "xlsx", "ppt", "pptx", "txt", "md", "csv", "png", "jpg", "jpeg", "webp"}
 MAX_BYTES = 50 * 1024 * 1024
-
-
-class CodeThrottle(AnonRateThrottle):
-    scope = "code"
-    rate = "10/hour"
 
 
 def fail(message, code=400):
@@ -144,6 +139,7 @@ def register(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([AuthThrottle])
 def sign_in(request):
     user = authenticate(request, email=str(request.data.get("email", "")).strip().lower(), password=request.data.get("password"))
     if not user:
@@ -271,7 +267,9 @@ def members(request, course_id):
     if not member(request.user, course_id):
         return fail("无权查看成员", 403)
     rows = Membership.objects.filter(course_id=course_id).select_related("user").order_by("joined_at")
-    return Response([{"id": m.user_id, "name": m.user.display_name, "email": m.user.email, "role": m.role} for m in rows])
+    teacher = member(request.user, course_id, 'teacher') is not None
+    return Response([{"id": m.user_id, "name": m.user.display_name, "role": m.role,
+                      **({'email': m.user.email} if teacher else {})} for m in rows])
 
 
 @api_view(["GET", "POST"])

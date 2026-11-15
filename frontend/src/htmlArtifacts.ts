@@ -1,11 +1,13 @@
 import { Marked } from 'marked'
 import DOMPurify from 'dompurify'
+import { mathMarkdown } from './mathMarkdown'
 import type { AgentArtifact, AgentMessage } from './api'
 
 export type HtmlFile = { key:string; name:string; source?:string; artifact?:AgentArtifact }
 const escapeHtml = (value:string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 // Raw model HTML must never become part of the application's DOM, even mid-stream.
 const markdown = new Marked({ breaks:true, gfm:true, renderer:{ html:({text}) => escapeHtml(text) } })
+markdown.use(mathMarkdown)
 export const renderMarkdown = (source:string) => DOMPurify.sanitize(markdown.parse(source) as string)
 
 export function extractHtml(source:string) {

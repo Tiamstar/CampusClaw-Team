@@ -89,7 +89,10 @@ def assistant_config(request, course_id):
             validate_refs(request.user, refs)
         c.app_id, c.template, c.skill_ids, c.mcp_refs = app, template, ids, refs
         c.use_knowledge = bool(data.get("use_knowledge", c.use_knowledge))
-        c.save()
+        AssistantConfig.objects.update_or_create(owner=request.user, course_id=course_id, defaults={
+            'app_id': c.app_id, 'template': c.template, 'skill_ids': c.skill_ids,
+            'mcp_refs': c.mcp_refs, 'use_knowledge': c.use_knowledge,
+        })
         return JsonResponse(config_data(c))
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)

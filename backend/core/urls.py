@@ -1,9 +1,19 @@
 from django.urls import path
 from . import views, assignment_views, file_views
 from . import agent_views, platform_views
+from . import forum_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('courses/<int:course_id>/forum/settings/',forum_views.config),
+    path('courses/<int:course_id>/forum/points/',forum_views.points),
+    path('courses/<int:course_id>/forum/posts/',forum_views.posts),
+    path('courses/<int:course_id>/forum/similar/',forum_views.similar),
+    path('courses/<int:course_id>/forum/todos/',forum_views.todos),
+    path('forum/posts/<int:post_id>/',forum_views.post_detail),
+    path('forum/posts/<int:post_id>/replies/',forum_views.replies),
+    path('forum/posts/<int:post_id>/drafts/',forum_views.drafts),
+    path('forum/drafts/<int:draft_id>/publish/',forum_views.publish_draft),
     path("agent/threads/<int:thread_id>/tool-test/", platform_views.tool_test),
     path("agent/catalog/", platform_views.catalog),
     path("agent/skills/upload/", platform_views.skill_upload),

@@ -41,6 +41,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 REST_FRAMEWORK = {"DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
                   "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"]}
+# Counters use the shared application database, not process-local memory.
+AUTH_TRUST_PROXY_IP = os.getenv('AUTH_TRUST_PROXY_IP', '0') == '1'
+AUTH_RATE_LIMITS = {
+    'login': {'ip': (20, 60), 'email': (10, 900)},
+    'code': {'ip': (10, 3600), 'email': (10, 3600)},
+}
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),

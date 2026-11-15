@@ -1,5 +1,7 @@
 """MCP Streamable HTTP client. Tokens stay in environment variables."""
 import json
+import asyncio
+import codecs
 import os
 import re
 from urllib.parse import urlsplit
@@ -7,6 +9,9 @@ import httpx
 from jsonschema import Draft202012Validator
 
 PROTOCOL = "2025-03-26"
+MAX_RESPONSE_BYTES = 3 * 1024 * 1024
+RPC_CALL_TIMEOUT = 55
+RPC_TIMEOUT = 15
 
 
 def validate_url(url):
@@ -32,38 +37,74 @@ async def rpc(server, method, params=None, notification=False, session=None):
     body = {"jsonrpc": "2.0", "method": method, "params": params or {}}
     if not notification:
         body["id"] = 1
-    async with httpx.AsyncClient(timeout=55 if method == "tools/call" else 15, follow_redirects=False, trust_env=False) as client:
-        async with client.stream("POST", server.url, headers=headers, json=body) as response:
-            if response.status_code >= 400:
-                raise ValueError(f"MCP HTTP {response.status_code}，请检查地址、令牌与服务状态")
-            session_id = response.headers.get("Mcp-Session-Id", sid)
-            if notification:
-                return {}, session_id
-            raw = bytearray()
-            if "text/event-stream" in response.headers.get("content-type", ""):
-                data_lines = []
-                async for line in response.aiter_lines():
-                    if line.startswith("data:"):
-                        data_lines.append(line[5:].lstrip())
-                    elif not line and data_lines:
-                        data = json.loads("\n".join(data_lines)); data_lines = []
-                        if data.get("id") == 1:
-                            break
-                    if sum(map(len, data_lines)) > 3145728:
-                        raise ValueError("MCP 返回超出 3 MB 限制")
-                else:
-                    raise ValueError("MCP SSE 未返回匹配响应")
-            else:
-                async for chunk in response.aiter_bytes():
-                    raw.extend(chunk)
-                    if len(raw) > 3145728:
-                        raise ValueError("MCP 返回超出 3 MB 限制")
-                data = json.loads(raw)
-            if data.get("error"):
-                raise ValueError("MCP 协议错误，代码 " + str(data["error"].get("code", "unknown")))
-            if data.get("id") != 1 or "result" not in data:
-                raise ValueError("MCP 响应格式不正确")
-            return data["result"], session_id
+    timeout = RPC_CALL_TIMEOUT if method == "tools/call" else RPC_TIMEOUT
+    try:
+        async with asyncio.timeout(timeout):
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=False, trust_env=False) as client:
+                async with client.stream("POST", server.url, headers=headers, json=body) as response:
+                    if response.status_code >= 400:
+                        raise ValueError(f"MCP HTTP {response.status_code}，请检查地址、令牌与服务状态")
+                    session_id = response.headers.get("Mcp-Session-Id", sid)
+                    if notification:
+                        return {}, session_id
+                    data = await read_response(response)
+                    if not isinstance(data, dict):
+                        raise ValueError("MCP 响应格式不正确")
+                    if data.get("error"):
+                        raise ValueError("MCP 协议错误")
+                    if data.get("id") != 1 or "result" not in data:
+                        raise ValueError("MCP 响应格式不正确")
+                    return data["result"], session_id
+    except TimeoutError as exc:
+        raise ValueError("MCP 请求超过总时限") from exc
+
+
+async def read_response(response):
+    total = 0
+    raw = bytearray()
+    is_sse = "text/event-stream" in response.headers.get("content-type", "")
+    decoder = codecs.getincrementaldecoder('utf-8-sig')()
+    pending, data_lines = '', []
+
+    def consume(line):
+        if line.startswith('data:'):
+            data_lines.append(line[5:].removeprefix(' '))
+        elif not line and data_lines:
+            data = json.loads('\n'.join(data_lines))
+            data_lines.clear()
+            if isinstance(data, dict) and data.get('id') == 1:
+                return data
+        return None
+
+    async for chunk in response.aiter_bytes():
+        total += len(chunk)
+        if total > MAX_RESPONSE_BYTES:
+            raise ValueError("MCP 返回超出 3 MB 限制")
+        if not is_sse:
+            raw.extend(chunk)
+            continue
+        pending += decoder.decode(chunk)
+        # Handle LF, CRLF and CR, even when delimiters cross chunks.
+        while True:
+            boundary = re.search(r'[\r\n]', pending)
+            if boundary is None or (boundary.group() == '\r' and boundary.end() == len(pending)):
+                break
+            end = boundary.end()
+            if pending[boundary.start():end + 1] == '\r\n':
+                end += 1
+            line, pending = pending[:boundary.start()], pending[end:]
+            data = consume(line)
+            if data is not None:
+                return data
+    if not is_sse:
+        return json.loads(raw)
+    pending += decoder.decode(b'', final=True)
+    for line in re.split(r'\r\n|[\r\n]', pending) + ['']:
+        data = consume(line)
+        if data is not None:
+            return data
+    raise ValueError("MCP SSE 未返回匹配响应")
+
 
 
 async def discover(server):

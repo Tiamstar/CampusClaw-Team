@@ -103,10 +103,9 @@ def validate_refs(user, refs):
 
 
 def load_config(user, course_id):
-    config, _ = AssistantConfig.objects.get_or_create(
-        owner=user, course_id=course_id,
-        defaults={"skill_ids": list(APPS[0]["default_skill_ids"])},
-    )
+    config = AssistantConfig.objects.filter(owner=user, course_id=course_id).first()
+    if config is None:
+        config = AssistantConfig(owner=user, course_id=course_id, skill_ids=list(APPS[0]['default_skill_ids']))
     available = {skill["id"] for skill in skill_list(user)}
     migrated = [LEGACY_SKILL_IDS.get(skill_id, skill_id) for skill_id in config.skill_ids]
     config.skill_ids = list(dict.fromkeys(skill_id for skill_id in migrated if skill_id in available))

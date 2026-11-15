@@ -6,6 +6,78 @@ from django.utils import timezone
 from pgvector.django import VectorField
 
 
+class AuthRateLimit(models.Model):
+    """Shared, row-locked expiring counters; no raw email/IP persisted."""
+    key = models.CharField(max_length=64, primary_key=True)
+    count = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+
+
+class KnowledgePoint(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['course', 'name'], name='unique_course_point')]
+
+
+class ForumSettings(models.Model):
+    course = models.OneToOneField('Course', on_delete=models.CASCADE)
+    draft_enabled = models.BooleanField(default=True)
+    wait_hours = models.PositiveIntegerField(default=24)
+    timezone = models.CharField(max_length=64, default='Asia/Shanghai')
+    revision = models.PositiveIntegerField(default=0)
+
+
+class ForumPost(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    author = models.ForeignKey('User', on_delete=models.PROTECT)
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    anonymous = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False)
+    featured = models.BooleanField(default=False)
+    points = models.ManyToManyField(KnowledgePoint, blank=True)
+    mentions = models.ManyToManyField('User', related_name='forum_mentions', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class ForumDraft(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey('User', on_delete=models.PROTECT)
+    status = models.CharField(max_length=24, default='running')
+    body = models.TextField(blank=True)
+    citations = models.JSONField(default=list)
+    error = models.CharField(max_length=200, blank=True)
+    model = models.CharField(max_length=200, blank=True)
+    skill_version = models.CharField(max_length=100, default='forum-answer-draft@1.0.0')
+    settings_revision = models.PositiveIntegerField(default=0)
+    request_id = models.CharField(max_length=64, blank=True)
+    confirmed_by = models.ForeignKey('User', null=True, on_delete=models.PROTECT, related_name='confirmed_forum_drafts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    published_at = models.DateTimeField(null=True)
+
+
+class ForumReply(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name='replies')
+    author = models.ForeignKey('User', on_delete=models.PROTECT)
+    body = models.TextField()
+    teacher_answer = models.BooleanField(default=False)
+    draft = models.OneToOneField(ForumDraft, null=True, blank=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ForumTodo(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
+    teacher = models.ForeignKey('User', on_delete=models.CASCADE)
+    reason = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['post', 'teacher', 'reason'], name='unique_forum_todo')]
+
+
 def token_code(length=8):
     return "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
 
