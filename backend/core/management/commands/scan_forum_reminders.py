@@ -4,6 +4,7 @@ from django.db import close_old_connections
 from core.forum_service import scan_reminders
 from core.quiz_service import expire_attempts
 from core.review_service import scan_review_tasks
+from core.diagnostic_service import scan_diagnostics
 from core.models import GraphCandidate
 from django.utils import timezone
 from datetime import timedelta
@@ -21,6 +22,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'Created {scan_reminders()} forum reminders')
                 self.stdout.write(f'Submitted {expire_attempts()} expired quiz attempts')
                 self.stdout.write(f'Processed {scan_review_tasks()} review tasks')
+                self.stdout.write(f'Processed {scan_diagnostics()} diagnostic reports')
                 GraphCandidate.objects.filter(status='running',created_at__lt=timezone.now()-timedelta(minutes=5)).update(status='failed',error='抽取中断，请重试')
             except Exception as exc:
                 if not options['loop']:

@@ -421,3 +421,4 @@ from .gradebook_models import GradePolicy, GradeSnapshot
 from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource, GraphVersion
 
 from .review_models import ReviewPlan, ReviewReminder
+from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion

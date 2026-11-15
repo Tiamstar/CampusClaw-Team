@@ -9,7 +9,7 @@
 - [x] 2.1 完成 E1 题库、随机组卷、五类题与公式展示、试卷快照（Codex 本地实现/自测，独立验收待执行）。
 - [x] 2.2 完成版本保存、限时、次数、幂等交卷与交卷后只读（证据见 docs/quiz-delivery.md）。
 - [x] 2.3 完成客观题判分、简答 AI 建议、教师复核与题目统计（真实模型与账号验证；不声称手写识别已实现）。
-- [ ] 2.4 完成 E4 权重成绩册、Excel、个人及班级学情、HTML / PDF 报告（成绩册/快照/Excel 已本地自测，见 docs/gradebook-delivery.md；个人/班级学情已实现，见 docs/learning-mcp-delivery.md；诊断报告仍待完成）。
+- [x] 2.4 完成 E4 权重成绩册、Excel、个人及班级学情、HTML / PDF 报告（本地自测见 docs/gradebook-delivery.md、docs/learning-mcp-delivery.md、docs/diagnostic-delivery.md；诊断真实模型反例已修订并保留版本，独立人工验收待执行）。
 - [x] 2.5 完成成绩、测验统计与掌握度只读 MCP 工具并自测权限（官方 MCP SDK/真实账号验证，见 docs/learning-mcp-delivery.md；独立验收待执行）。
 
 ## 3. 陈志康负责的实现与自测

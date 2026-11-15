@@ -129,3 +129,7 @@ PostgreSQL + 底座检索存储 + 受控文件存储
 ## 已冻结的复习接口（2026-11-16）
 
 KNO-004 实际沿用 `/api/`，非上表拟定的 v1 前缀。学生本人通过 `courses/{id}/review-plans/` POST 创建持久化排队任务，GET分页查询；`review-plans/{id}/`读取固定窗口与依据，`action/` POST确认/调整/取消，携带整数 expected_revision。确认还需 point_ids 和 schedule（timezone/start_date/local_time/offset_days），未确认不创建提醒。`review-reminders/{id}/` POST标记完成或取消；他人及教师无权管理学生个人计划。依据变化返回409且暂停旧待办，校验错误400，角色或成员错误403。完整数据、锁顺序、展示边界与实际验证见 [复习路径交付](review-path-delivery.md)。
+
+## 已冻结的诊断接口（2026-11-16）
+
+GRD-004沿用 `/api/`：课程下 `diagnostic-settings/` GET/PUT、`diagnostic-reports/` GET/POST；报告下 GET详情、`action/` POST复核/发布/取消/撤回、`revise/` POST创建修订版本、`versions/` GET历史。版本下 `html/` 和 `pdf/` 每次重新授权；学生仅有本人已发布且依据有效的版本。修改需expected_revision，确认复核携带checked_point_ids覆盖全部结论，发布需先复核当前版本。HTML/PDF源于同一content_hash，响应携带X-Report-Version及X-Report-Content-Hash。具体边界及真实模型错误反例见 [诊断交付](diagnostic-delivery.md)。

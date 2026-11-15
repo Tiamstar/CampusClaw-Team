@@ -1,4 +1,5 @@
 from . import review_views
+from . import diagnostic_views
 from . import graph_views
 from . import data_mcp
 from . import learning_views
@@ -15,6 +16,13 @@ urlpatterns = [
     path('review-plans/<int:plan_id>/', review_views.detail),
     path('review-plans/<int:plan_id>/action/', review_views.action),
     path('review-reminders/<int:reminder_id>/', review_views.reminder),
+    path('courses/<int:course_id>/diagnostic-settings/', diagnostic_views.settings),
+    path('courses/<int:course_id>/diagnostic-reports/', diagnostic_views.reports),
+    path('diagnostic-reports/<int:report_id>/', diagnostic_views.detail),
+    path('diagnostic-reports/<int:report_id>/action/', diagnostic_views.action),
+    path('diagnostic-reports/<int:report_id>/revise/', diagnostic_views.revise),
+    path('diagnostic-reports/<int:report_id>/versions/', diagnostic_views.versions),
+    path('diagnostic-versions/<int:version_id>/<str:kind>/', diagnostic_views.version_file),
     path('courses/<int:course_id>/graph/', graph_views.graph),
     path('courses/<int:course_id>/graph/config/', graph_views.config),
     path('courses/<int:course_id>/graph/candidates/', graph_views.candidates),
