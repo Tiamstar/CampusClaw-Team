@@ -13,11 +13,11 @@ logger = logging.getLogger("campus.audit")
 
 
 def record_audit(*, actor_id, action, object_ref, status, request_id="", course_id=None,
-                 skill_id="", duration_ms=0):
+                 skill_id="", duration_ms=0, tokens=None):
     values = dict(actor_id=actor_id, course_id=course_id, action=action[:100],
                   object_ref=object_ref[:200], status=str(status)[:16],
                   request_id=request_id or uuid.uuid4().hex, skill_id=skill_id[:160],
-                  duration_ms=duration_ms, tokens=None)
+                  duration_ms=duration_ms, tokens=tokens)
     try:
         AuditEvent.objects.create(**values)
     except DatabaseError:

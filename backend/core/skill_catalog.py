@@ -27,7 +27,7 @@ for metadata in json.loads((_ROOT / "catalog.json").read_text(encoding="utf-8"))
     folder = _ROOT / metadata["id"]
     resources = {path.relative_to(folder).as_posix(): path.read_text(encoding="utf-8")
                  for directory in (folder / "references", folder / "scripts") if directory.exists()
-                 for path in sorted(directory.rglob("*")) if path.is_file()}
+                 for path in sorted(directory.rglob("*")) if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"}
     BUILTIN_SKILLS.append({**metadata, "builtin": True,
         "instructions": (folder / "SKILL.md").read_text(encoding="utf-8"),
         "resources": resources,

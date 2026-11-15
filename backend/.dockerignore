@@ -4,3 +4,6 @@ local.sqlite3
 media/
 staticfiles/
 .env
+
+**/__pycache__
+**/*.pyc

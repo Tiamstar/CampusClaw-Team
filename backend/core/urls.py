@@ -1,4 +1,4 @@
-from . import index_views, coursework_views
+from . import index_views, coursework_views, telemetry_views
 from . import review_views
 from . import diagnostic_views
 from . import graph_views
@@ -88,6 +88,8 @@ urlpatterns = [
     path("files/<int:file_id>/preview/", file_views.preview_file),
     path("submission-versions/<int:version_id>/review/", assignment_views.start_review),
     path("courses/<int:course_id>/coursework-settings/", coursework_views.settings),
+    path("courses/<int:course_id>/guidance-tasks/", coursework_views.guidance_tasks),
+    path("courses/<int:course_id>/skill-monitor/", telemetry_views.skill_monitor),
     path("courses/<int:course_id>/wrong-answers/", coursework_views.wrong_answers),
     path("submission-versions/<int:version_id>/ai-tasks/", coursework_views.version_tasks),
     path("coursework-tasks/<int:task_id>/", coursework_views.task_detail),

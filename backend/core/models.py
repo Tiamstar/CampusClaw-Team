@@ -458,7 +458,7 @@ class AuditEvent(models.Model):
     request_id = models.CharField(max_length=64, db_index=True)
     skill_id = models.CharField(max_length=160, blank=True, db_index=True)
     duration_ms = models.PositiveIntegerField(default=0)
-    tokens = models.PositiveIntegerField(null=True)
+    tokens = models.PositiveBigIntegerField(null=True)
 
 from .gradebook_models import GradePolicy, GradeSnapshot
 
@@ -467,3 +467,4 @@ from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource,
 from .review_models import ReviewPlan, ReviewReminder
 from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion
 from .coursework_models import CourseworkSettings, CourseworkTask
+from .telemetry_models import ModelCall, SkillMetricSample, SkillAlert, SkillAlertEvent, SkillMonitorHeartbeat

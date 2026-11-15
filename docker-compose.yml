@@ -121,6 +121,20 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+  skill-monitor:
+    mem_limit: 256m
+    image: campusclaw-team-backend
+    environment: *backend-environment
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    command: python manage.py monitor_teaching_skills --loop
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "monitor_teaching_skills", "--health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
   frontend:
     build: ./frontend
     ports: ["127.0.0.1:${APP_PORT:-5174}:80"]

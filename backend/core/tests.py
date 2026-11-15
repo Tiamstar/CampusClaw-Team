@@ -283,7 +283,7 @@ class AgentRuntimeTests(TransactionTestCase):
             self.assertTrue(content.startswith(b'%PDF' if kind == 'pdf' else b'PK'))
 
 
-class HtmlExtractionTests(SimpleTestCase):
+class HtmlExtractionTests(TestCase):
     def test_shared_extraction_cases(self):
         for case in json.loads(Path(__file__).with_name('html_cases.json').read_text(encoding='utf-8')):
             with self.subTest(case=case['name']):
@@ -307,4 +307,4 @@ class HtmlExtractionTests(SimpleTestCase):
                         return [item async for item in model_stream([{'role':'user', 'content':'page'}])]
                 with patch.dict(os.environ, {'MODEL_PROVIDER':'openai', 'MODEL_NAME':'fixture', 'MODEL_API_BASE':'https://example.test/v1', 'MODEL_API_KEY':'fixture'}):
                     with self.assertRaises(RuntimeErrorWithStatus):
-                        asyncio.run(collect())
+                        async_to_sync(collect)()

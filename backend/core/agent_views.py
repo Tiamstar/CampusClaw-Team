@@ -1,3 +1,5 @@
+from contextlib import aclosing
+from .model_telemetry import model_context
 import asyncio
 from functools import wraps
 import json
@@ -366,20 +368,23 @@ def agent_stream(request, thread_id):
                     messages.append({"role": "system", "content": "已达到工具调用预算。请根据已有证据完成回答，明确未完成部分，不再调用工具。"})
                 pending_calls = []
                 round_text = []
-                async for delta, model in model_stream(messages, attachments, tools):
-                    state = await sync_to_async(lambda: AgentRun.objects.filter(pk=run.pk).values_list("status", flat=True).first())()
-                    if state == AgentRun.Status.CANCELLED:
-                        raise asyncio.CancelledError
-                    await check_current()
-                    model_name = model or model_name
-                    if isinstance(delta, dict):
-                        pending_calls = delta.get("tool_calls") or []
-                        continue
-                    if delta:
-                        answer_parts.append(delta)
-                        round_text.append(delta)
-                        await sync_to_async(event)(run, "delta", {"text": delta})
-                        yield f"event: delta\ndata: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
+                with model_context(course_id=thread.course_id,actor_id=user.pk,request_id=request.request_id,
+                                   skill_id='course-assistant@1.0.0',config_revision=config.revision if config else None):
+                    async with aclosing(model_stream(messages, attachments, tools)) as stream:
+                        async for delta, model in stream:
+                            state = await sync_to_async(lambda: AgentRun.objects.filter(pk=run.pk).values_list("status", flat=True).first())()
+                            if state == AgentRun.Status.CANCELLED:
+                                raise asyncio.CancelledError
+                            await check_current()
+                            model_name = model or model_name
+                            if isinstance(delta, dict):
+                                pending_calls = delta.get("tool_calls") or []
+                                continue
+                            if delta:
+                                answer_parts.append(delta)
+                                round_text.append(delta)
+                                await sync_to_async(event)(run, "delta", {"text": delta})
+                                yield f"event: delta\ndata: {json.dumps({'text': delta}, ensure_ascii=False)}\n\n"
                 if not pending_calls:
                     break
                 messages.append({"role": "assistant", "content": "".join(round_text), "tool_calls": pending_calls})

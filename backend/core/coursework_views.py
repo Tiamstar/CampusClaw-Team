@@ -16,6 +16,7 @@ def task_data(task, teacher=False):
     try: current = service.valid_basis(task)
     except ValueError: current = False
     return {'id': task.pk, 'kind': task.kind, 'version_id': task.version_id, 'status': task.status,
+            'question': task.basis.get('question','') if task.kind=='guidance' else '',
             'item_title': task.basis.get('item', {}).get('title', ''),
             'phase': task.phase, 'revision': task.revision, 'skill_id': task.skill_id,
             'settings_revision': task.settings_revision, 'model': task.model, 'error': task.error,
@@ -32,15 +33,18 @@ def settings(request, course_id):
         data = request.data
         if not isinstance(data, dict) or any(type(data.get(k)) is not bool for k in ['grading_enabled', 'explanation_enabled']) or type(data.get('expected_revision')) is not int:
             return Response({'error': '技能配置格式无效'}, status=400)
+        if 'guidance_enabled' in data and type(data['guidance_enabled']) is not bool: return Response({'error':'解题引导开关无效'},status=400)
         with transaction.atomic():
             Course.objects.select_for_update().get(pk=course_id)
             if not Membership.objects.filter(course_id=course_id, user=request.user, role='teacher').exists(): return Response({'error': '权限已撤销'}, status=403)
             config = service.settings_for(course_id)
             if config.revision != data['expected_revision']: return Response({'error': '配置已变化，请刷新'}, status=409)
             config.grading_enabled, config.explanation_enabled = data['grading_enabled'], data['explanation_enabled']
+            if 'guidance_enabled' in data: config.guidance_enabled=data['guidance_enabled']
             config.revision += 1; config.save()
     config = service.settings_for(course_id)
-    return Response({'grading_enabled': config.grading_enabled, 'explanation_enabled': config.explanation_enabled, 'revision': config.revision})
+    return Response({'grading_enabled': config.grading_enabled, 'explanation_enabled': config.explanation_enabled,
+                     'guidance_enabled':config.guidance_enabled, 'revision': config.revision})
 
 
 @api_view(['GET', 'POST'])
@@ -67,11 +71,12 @@ def task_detail(request, task_id):
     task = get_object_or_404(CourseworkTask.objects.select_related('version__submission__assignment'), pk=task_id)
     membership = access(request.user, task.course_id)
     if not membership or (membership.role != 'teacher' and task.creator_id != request.user.pk): return Response({'error': '任务不存在'}, status=404)
+    if task.kind=='guidance' and task.creator_id!=request.user.pk: return Response({'error':'任务不存在'},status=404)
     if request.method == 'GET': return Response(task_data(task, membership.role == 'teacher'))
     if not isinstance(request.data, dict): return Response({'error': '请求必须为对象'}, status=400)
     with transaction.atomic():
         Course.objects.select_for_update().get(pk=task.course_id)
-        row = CourseworkTask.objects.select_for_update().select_related('version__submission__assignment').get(pk=task.pk)
+        row = CourseworkTask.objects.select_for_update(of=('self',)).select_related('version__submission__assignment').get(pk=task.pk)
         membership = access(request.user, row.course_id)
         if not membership or (membership.role != 'teacher' and row.creator_id != request.user.pk): return Response({'error': '权限已撤销'}, status=403)
         if type(request.data.get('expected_revision')) is not int or row.revision != request.data['expected_revision']: return Response({'error': '任务已变化，请刷新'}, status=409)
@@ -82,12 +87,28 @@ def task_detail(request, task_id):
             if row.status not in ['failed', 'cancelled']: return Response({'error': '仅失败或取消任务可重试'}, status=409)
             # New creator is the actual caller; teachers cannot impersonate students for explanations.
             try:
-                result = service.enqueue(row.version, request.user, row.kind, request.data.get('request_key', uuid.uuid4().hex),
-                    rubric=row.basis.get('rubric'), item_id=row.basis.get('item', {}).get('id'), retry_of=row, request_id=request.request_id)
+                if row.kind=='guidance':
+                    result=service.enqueue_guidance(row.course_id,request.user,row.basis['question'],request.data.get('request_key',uuid.uuid4().hex),request.request_id,row)
+                else:
+                    result = service.enqueue(row.version, request.user, row.kind, request.data.get('request_key', uuid.uuid4().hex),
+                        rubric=row.basis.get('rubric'), item_id=row.basis.get('item', {}).get('id'), retry_of=row, request_id=request.request_id)
             except PermissionError as exc: return Response({'error': str(exc)}, status=403)
             except ValueError as exc: return Response({'error': str(exc)}, status=409)
             return Response(task_data(result), status=202)
     return Response({'error': '操作应为 cancel 或 retry'}, status=400)
+
+
+@api_view(['GET','POST'])
+def guidance_tasks(request,course_id):
+    membership=access(request.user,course_id)
+    if not membership:return Response({'error':'课程不存在'},status=404)
+    if request.method=='GET':
+        return Response([task_data(t) for t in CourseworkTask.objects.filter(course_id=course_id,creator=request.user,kind='guidance').order_by('-id')[:30]])
+    if not isinstance(request.data,dict):return Response({'error':'请求须为对象'},status=400)
+    try:task=service.enqueue_guidance(course_id,request.user,request.data.get('question'),request.data.get('request_key'),request.request_id)
+    except PermissionError as exc:return Response({'error':str(exc)},status=403)
+    except ValueError as exc:return Response({'error':str(exc)},status=409)
+    return Response(task_data(task),status=202)
 
 
 @api_view(['GET'])

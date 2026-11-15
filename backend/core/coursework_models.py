@@ -5,12 +5,13 @@ class CourseworkSettings(models.Model):
     course = models.OneToOneField('core.Course', on_delete=models.CASCADE)
     grading_enabled = models.BooleanField(default=True)
     explanation_enabled = models.BooleanField(default=True)
+    guidance_enabled = models.BooleanField(default=True)
     revision = models.PositiveIntegerField(default=0)
 
 
 class CourseworkTask(models.Model):
     course = models.ForeignKey('core.Course', on_delete=models.CASCADE)
-    version = models.ForeignKey('core.SubmissionVersion', on_delete=models.CASCADE, related_name='ai_tasks')
+    version = models.ForeignKey('core.SubmissionVersion', null=True, on_delete=models.CASCADE, related_name='ai_tasks')
     creator = models.ForeignKey('core.User', on_delete=models.PROTECT)
     kind = models.CharField(max_length=20)
     skill_id = models.CharField(max_length=80)
@@ -36,5 +37,6 @@ class CourseworkTask(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['course', 'creator', 'request_key'], name='unique_coursework_request'),
             models.UniqueConstraint(fields=['version', 'creator', 'kind'], condition=models.Q(status__in=['queued', 'running']), name='unique_active_coursework'),
+            models.UniqueConstraint(fields=['course', 'creator'], condition=models.Q(kind='guidance', status__in=['queued', 'running']), name='unique_active_guidance'),
         ]
         indexes = [models.Index(fields=['status', 'id'], name='coursework_queue')]

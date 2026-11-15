@@ -5,7 +5,7 @@ import { renderMarkdown } from './htmlArtifacts'
 const props=defineProps<{assignment:Assignment;version:Version;isTeacher:boolean}>()
 const emit=defineEmits<{adopt:[value:{task_id:number;items:ReviewedItem[]}|null]}>()
 type Task={id:number;kind:string;status:string;phase:string;revision:number;current:boolean;skill_id:string;settings_revision:number;error:string;result:{items?:ReviewedItem[];explanation?:string};events:{phase:string;at:string}[]}
-type Config={grading_enabled:boolean;explanation_enabled:boolean;revision:number}
+type Config={guidance_enabled:boolean;grading_enabled:boolean;explanation_enabled:boolean;revision:number}
 const config=ref<Config|null>(null),tasks=ref<Task[]>([]),loading=ref(true),busy=ref(false),error=ref(''),notice=ref('')
 const rubric=ref([{title:'解题过程与结论',reference:'',maximum:props.assignment.max_score}])
 const reviewed=ref<ReviewedItem[]>([]),adopted=ref<number|null>(null)
@@ -38,7 +38,7 @@ onBeforeUnmount(()=>{alive=false;window.clearInterval(timer)})
   <p v-if="error" role="alert">{{error}} <button type="button" class="secondary" :disabled="busy" @click="load">刷新</button></p><p v-if="notice" role="status">{{notice}}</p>
   <template v-if="config">
     <details v-if="isTeacher"><summary>课程教学技能开关（版本 {{config.revision}}）</summary>
-      <label class="check"><input v-model="config.grading_enabled" type="checkbox" :disabled="busy">作业批改</label><label class="check"><input v-model="config.explanation_enabled" type="checkbox" :disabled="busy">错题讲解</label>
+      <label class="check"><input v-model="config.guidance_enabled" type="checkbox" :disabled="busy">解题引导</label><label class="check"><input v-model="config.grading_enabled" type="checkbox" :disabled="busy">作业批改</label><label class="check"><input v-model="config.explanation_enabled" type="checkbox" :disabled="busy">错题讲解</label>
       <button type="button" class="secondary" :disabled="busy" @click="saveSettings">保存技能开关</button>
     </details>
     <template v-if="isTeacher">

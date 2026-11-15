@@ -1,3 +1,4 @@
+from contextlib import aclosing
 import asyncio
 from contextvars import ContextVar
 import base64
@@ -446,16 +447,23 @@ async def trace_record(kind, payload):
 
 
 async def model_stream(messages, attachments=(), tools=()):
+    from .model_telemetry import measured_stream
+    async with aclosing(measured_stream(_traced_model_stream, messages, attachments, tools)) as stream:
+        async for item in stream: yield item
+
+
+async def _traced_model_stream(messages, attachments=(), tools=()):
     frames = []
     token = trace_frames.set(frames)
     text_parts, calls = [], []
     try:
-        async for delta, model in _model_stream_impl(messages, attachments, tools):
-            if isinstance(delta, dict):
-                calls.extend(delta.get("tool_calls", []))
-            else:
-                text_parts.append(delta)
-            yield delta, model
+        async with aclosing(_model_stream_impl(messages, attachments, tools)) as stream:
+            async for delta, model in stream:
+                if isinstance(delta, dict):
+                    calls.extend(delta.get("tool_calls", []))
+                else:
+                    text_parts.append(delta)
+                yield delta, model
     finally:
         await trace_record("llm_response", {"content": "".join(text_parts), "tool_calls": calls, "frames": frames})
         trace_frames.reset(token)
@@ -513,7 +521,7 @@ async def _model_stream_impl(messages, attachments=(), tools=()):
         if not base or not key:
             raise RuntimeErrorWithStatus("未配置 OpenAI 兼容模型网关")
         endpoint = base + "/chat/completions"
-        payload = {"model": model, "stream": True, "messages": messages}
+        payload = {"model": model, "stream": True, "messages": messages, "stream_options": {"include_usage": True}}
         if tools:
             payload["tools"] = tools
         headers = _openai_headers(key)
@@ -537,6 +545,8 @@ async def _model_stream_impl(messages, attachments=(), tools=()):
                     data = json.loads(raw)
                 except json.JSONDecodeError:
                     continue
+                from .model_telemetry import observe_usage
+                observe_usage(data, parser)
                 if trace_frames.get() is not None:
                     trace_frames.get().append(data)
                 if parser == "anthropic":
