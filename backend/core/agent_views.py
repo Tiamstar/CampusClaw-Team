@@ -172,12 +172,16 @@ def reindex_material(request, material_id):
         return JsonResponse({"error": "资料不存在"}, status=404)
     if not require_course_member(request.user, material.course_id).role == "teacher":
         return JsonResponse({"error": "仅教师可重建索引"}, status=403)
+    from .index_service import enqueue, task_data, IndexConflict
     try:
-        entry = index_material(material, "auto")
-    except Exception as exc:
-        entry = KnowledgeEntry.objects.filter(material=material).first()
-        return JsonResponse({"status": entry.status if entry else "failed", "error": str(exc)}, status=503)
-    return JsonResponse({"status": entry.status, "chunks": entry.chunks.count()})
+        task = enqueue(material, request.user, _json(request).get('request_key'), request_id=request.request_id)
+        return JsonResponse(task_data(task), status=202)
+    except IndexConflict as exc:
+        return JsonResponse({'error': str(exc)}, status=409)
+    except PermissionError as exc:
+        return JsonResponse({'error': str(exc)}, status=403)
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
 
 
 @agent_auth_required
@@ -189,14 +193,29 @@ def reindex_course(request, course_id):
         return JsonResponse({"error": "课程不存在"}, status=404)
     if membership.role != "teacher":
         return JsonResponse({"error": "仅教师可重建索引"}, status=403)
+    from .index_service import enqueue, task_data, IndexConflict, validate_key
+    from .models import MaterialIndexTask
+    import uuid
+    key = _json(request).get('request_key', uuid.uuid4().hex)
+    try:
+        validate_key(key)
+        if len(key) > 75:
+            raise ValueError('批量请求标识不能超过 75 字符')
+    except ValueError as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
     results = []
-    for material in Material.objects.filter(course_id=course_id).select_related("attachment"):
+    for material in Material.objects.filter(course_id=course_id).select_related('attachment'):
         try:
-            entry = index_material(material, "auto")
-            results.append({"material_id": material.id, "status": entry.status, "chunks": entry.chunks.count()})
-        except Exception as exc:
-            results.append({"material_id": material.id, "status": "failed", "error": str(exc)})
-    return JsonResponse({"results": results})
+            task = enqueue(material, request.user, f'{key}-{material.pk}', request_id=request.request_id)
+        except IndexConflict:
+            task = MaterialIndexTask.objects.filter(material=material, status__in=('queued', 'running')).first()
+            if not task:
+                results.append({'material_id': material.pk, 'status': 'conflict'})
+                continue
+        except PermissionError:
+            return JsonResponse({'error': '任课教师权限已撤销'}, status=403)
+        results.append(task_data(task))
+    return JsonResponse({'results': results}, status=202)
 
 
 @agent_auth_required

@@ -1,4 +1,6 @@
 import mimetypes
+import hashlib
+import uuid
 import secrets
 from datetime import timedelta
 from pathlib import Path
@@ -22,7 +24,8 @@ from .auth_throttle import AuthThrottle, CodeThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .models import Assignment, Course, EmailCode, Material, Membership, StoredFile, Submission, SubmissionVersion, TeacherInvite, User, token_code
-from .agent_runtime import index_material
+from .index_service import enqueue, task_data, validate_key, IndexConflict
+from .models import MaterialIndexTask
 from .file_access import authorized_file, preview_info
 
 EXTENSIONS = {"doc", "docx", "pdf", "zip", "xls", "xlsx", "ppt", "pptx", "txt", "md", "csv", "png", "jpg", "jpeg", "webp"}
@@ -272,6 +275,21 @@ def members(request, course_id):
                       **({'email': m.user.email} if teacher else {})} for m in rows])
 
 
+def material_data(item, teacher=False, task=None):
+    entry = getattr(item, 'knowledge_entry', None)
+    status = entry.status if entry else 'pending'
+    if task and task.status in ('queued', 'running', 'cancelled'):
+        status = task.status
+    elif status == 'pending' and not task:
+        status = 'untracked'
+    error = (task.error if task else '索引未完成，请任课教师重建') if status in ('failed', 'cancelled') else ''
+    if not teacher and error:
+        error = '知识索引未完成，请联系任课教师'
+    return {'id': item.id, 'title': item.title, 'attachment': file_data(item.attachment),
+            'created_at': item.created_at, 'index_status': status, 'index_error': error,
+            'index_task': task_data(task) if teacher and task else None}
+
+
 @api_view(["GET", "POST"])
 def materials(request, course_id):
     m = member(request.user, course_id)
@@ -279,25 +297,45 @@ def materials(request, course_id):
         return fail("无权访问课程", 403)
     course = get_object_or_404(Course, pk=course_id)
     if request.method == "GET":
-        return Response([{"id": x.id, "title": x.title, "attachment": file_data(x.attachment), "created_at": x.created_at,
-                          "index_status": getattr(getattr(x, "knowledge_entry", None), "status", "pending"),
-                          "index_error": getattr(getattr(x, "knowledge_entry", None), "error_message", "")}
-                         for x in course.materials.select_related("attachment", "knowledge_entry").order_by("-created_at")])
+        rows = list(course.materials.select_related('attachment', 'knowledge_entry').order_by('-created_at'))
+        latest = {t.material_id: t for t in MaterialIndexTask.objects.filter(course=course).order_by('material_id', '-id').distinct('material_id')}
+        return Response([material_data(item, m.role == 'teacher', latest.get(item.pk)) for item in rows])
     if m.role != "teacher":
         return fail("仅教师可上传资料", 403)
     upload = request.FILES.get("file")
     error = validate_file(upload)
     if error:
         return fail(error)
-    f = store_file(course, request.user, upload, "material")
-    item = Material.objects.create(course=course, title=str(request.data.get("title", "")).strip()[:200] or f.original_name, attachment=f)
+    title = str(request.data.get('title', '')).strip()[:200] or upload.name
     try:
-        index_material(item)
+        key = validate_key(request.data.get('request_key', uuid.uuid4().hex))
+    except ValueError as exc:
+        return fail(str(exc))
+    digest = hashlib.sha256()
+    for part in upload.chunks():
+        digest.update(part)
+    upload.seek(0)
+    digest.update(str((title, upload.name)).encode())
+    payload_hash = digest.hexdigest()
+    stored = None
+    try:
+        with transaction.atomic():
+            Course.objects.select_for_update().get(pk=course_id)
+            if not member(request.user, course_id, 'teacher'):
+                return fail('任课教师权限已撤销', 403)
+            old = MaterialIndexTask.objects.filter(course=course, requested_by=request.user, request_key=key).select_related('material__attachment', 'material__knowledge_entry').first()
+            if old:
+                if old.payload_hash != payload_hash:
+                    return fail('请求标识已用于其他内容，请使用新的请求标识', 409)
+                return Response(material_data(old.material, True, old), status=202)
+            stored = store_file(course, request.user, upload, 'material')
+            item = Material.objects.create(course=course, title=title, attachment=stored)
+            task = enqueue(item, request.user, key, payload_hash, request.request_id)
     except Exception:
-        pass
-    entry = getattr(item, "knowledge_entry", None)
-    return Response({"id": item.id, "title": item.title, "attachment": file_data(f),
-                     "index_status": entry.status if entry else "failed", "index_error": entry.error_message if entry else ""}, status=201)
+        if stored:
+            stored.file.delete(save=False)
+        raise
+    return Response(material_data(item, True, task), status=202)
 
 
 @api_view(["GET"])

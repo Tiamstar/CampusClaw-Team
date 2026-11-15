@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
 import AssistantStudio from './AssistantStudio.vue'
+import MaterialIndexStatus from './MaterialIndexStatus.vue'
 import ForumWorkspace from './ForumWorkspace.vue'
 import QuizWorkspace from './QuizWorkspace.vue'
 import GradebookWorkspace from './GradebookWorkspace.vue'
@@ -65,8 +66,30 @@ async function authenticate() { await run(async () => { let tokens: TokenPair; i
 async function sendCode() { await run(async () => { await api('auth/code/', 'POST', { email:email.value, purpose:authMode.value === 'reset' ? 'reset' : 'register' }); message.value = '验证码已发送，请查看邮箱' }) }
 async function signOut() { if(!canLeaveQuiz())return; await run(async () => { try { await logoutAuth() } finally { me.value = null; selected.value = null; Object.values(courseIcons.value).forEach(URL.revokeObjectURL); courseIcons.value = {} } }) }
 async function selectCourse(course: Course) { if(!canLeaveQuiz())return; if (window.innerWidth <= 900) navigationOpen.value = false; selected.value = course; currentAssignment.value = null; tab.value = 'materials'; await loadTab() }
-async function loadTab() { if (!selected.value) return; const id = selected.value.id; if (tab.value === 'materials') materials.value = await api<Material[]>(`courses/${id}/materials/`); if (tab.value === 'assignments') assignments.value = await api<Assignment[]>(`courses/${id}/assignments/`); if (tab.value === 'members') members.value = await api<Member[]>(`courses/${id}/members/`); if (tab.value === 'agent') await loadAgent() }
+async function loadTab() { if (!selected.value) return; const id = selected.value.id; if (tab.value === 'materials') await refreshMaterials(); if (tab.value === 'assignments') assignments.value = await api<Assignment[]>(`courses/${id}/assignments/`); if (tab.value === 'members') members.value = await api<Member[]>(`courses/${id}/members/`); if (tab.value === 'agent') await loadAgent() }
 async function switchTab(value: 'materials'|'assignments'|'members'|'agent'|'studio'|'forum'|'quiz'|'gradebook'|'learning'|'graph'|'review'|'diagnostic') { if(!canLeaveQuiz())return; if (window.innerWidth <= 900) navigationOpen.value = false; tab.value = value; currentAssignment.value = null; await run(loadTab) }
+const materialRefreshError=ref('')
+let materialUploadKey=crypto.randomUUID()
+watch([materialTitle,materialFile],()=>{materialUploadKey=crypto.randomUUID()})
+async function refreshMaterials(){
+  const courseId=selected.value?.id
+  if(!courseId)return
+  try{const rows=await api<Material[]>(`courses/${courseId}/materials/`);if(selected.value?.id===courseId&&tab.value==='materials'){materials.value=rows;materialRefreshError.value=''}}
+  catch(e){if(selected.value?.id===courseId&&tab.value==='materials')materialRefreshError.value=e instanceof Error?e.message:'状态刷新失败'}
+}
+let materialPoll:ReturnType<typeof setTimeout>|undefined
+let materialPollGeneration=0
+watch([()=>selected.value?.id,tab,me],()=>{
+  if(materialPoll)clearTimeout(materialPoll)
+  const generation=++materialPollGeneration
+  const poll=async()=>{
+    if(generation!==materialPollGeneration||tab.value!=='materials'||!selected.value||!me.value)return
+    if(materials.value.some(m=>['queued','running','pending'].includes(m.index_status||'')))await refreshMaterials()
+    if(generation===materialPollGeneration)materialPoll=setTimeout(poll,4000)
+  }
+  if(tab.value==='materials'&&selected.value&&me.value)materialPoll=setTimeout(poll,4000)
+})
+onUnmounted(()=>{materialPollGeneration++;if(materialPoll)clearTimeout(materialPoll)})
 async function loadAgent() { if (!selected.value) return; const assistantConfig = await api<{use_knowledge:boolean}>(`courses/${selected.value.id}/assistant/`); agentUseMaterials.value = assistantConfig.use_knowledge; agentThreads.value = await api<AgentThread[]>('agent/threads/'); const courseThreads = agentThreads.value.filter(t => t.course_id === selected.value!.id); agentThreads.value = courseThreads; const current = activeThread.value ? courseThreads.find(t => t.id === activeThread.value!.id) : null; activeThread.value = current || courseThreads[0] || null; agentMessages.value = activeThread.value ? await api<AgentMessage[]>(`agent/threads/${activeThread.value.id}/messages/`) : [] }
 async function newAgentThread() { if (!selected.value) return; activeThread.value = await api<AgentThread>('agent/threads/', 'POST', { course_id: selected.value.id }); agentThreads.value.unshift(activeThread.value); agentMessages.value = [] }
 function agentFileFrom(event: Event) { const files = Array.from((event.target as HTMLInputElement).files || []); agentFiles.value.push(...files); (event.target as HTMLInputElement).value = '' }
@@ -79,7 +102,7 @@ async function joinCourse() { await run(async () => { const c = await api<Course
 async function redeem() { await run(async () => { await api('teacher-invite/redeem/', 'POST', {code:invite.value}); await refreshUser(); panel.value = 'none'; invite.value = ''; message.value = '教师资格已开通' }) }
 async function resetCode() { if (!selected.value || !confirm('重置后旧课程码立即失效，确定继续？')) return; await run(async () => { const result = await api<{join_code:string}>(`courses/${selected.value!.id}/code/reset/`, 'POST'); selected.value!.join_code = result.join_code; message.value = '课程码已重置' }) }
 function fileFrom(event: Event, target: 'icon'|'material'|'assignment') { const f = (event.target as HTMLInputElement).files?.[0] || null; if (target === 'icon') courseIcon.value = f; else if (target === 'material') materialFile.value = f; else if (target === 'assignment') assignmentFile.value = f }
-async function uploadMaterial() { if (!selected.value || !materialFile.value) { message.value = '请选择文件'; return } await run(async () => { const form = new FormData(); form.append('file', materialFile.value!); form.append('title', materialTitle.value); await api(`courses/${selected.value!.id}/materials/`, 'POST', form); materialTitle.value = ''; materialFile.value = null; panel.value = 'none'; await loadTab() }) }
+async function uploadMaterial() { if (!selected.value || !materialFile.value) { message.value = '请选择文件'; return } await run(async () => { const form = new FormData(); form.append('file', materialFile.value!); form.append('title', materialTitle.value); form.append('request_key', materialUploadKey); await api(`courses/${selected.value!.id}/materials/`, 'POST', form); materialTitle.value = ''; materialFile.value = null; panel.value = 'none'; await loadTab() }) }
 async function publish() { if (!selected.value) return; await run(async () => { const form = new FormData(); form.append('title', assignmentTitle.value); form.append('description', description.value); form.append('due_at', new Date(dueAt.value).toISOString()); form.append('allow_late', String(allowLate.value)); form.append('allowed_extensions', extensions.value); form.append('max_file_size_mb', String(maxMb.value)); form.append('max_score', String(maxScore.value)); if (assignmentFile.value) form.append('file', assignmentFile.value); await api(`courses/${selected.value!.id}/assignments/`, 'POST', form); assignmentTitle.value = ''; description.value = ''; assignmentFile.value = null; panel.value = 'none'; await loadTab() }) }
 function openAssignment(a: Assignment) { currentAssignment.value = a }
 async function backToAssignments() { currentAssignment.value = null; await run(loadTab) }
@@ -159,7 +182,7 @@ function handleProtectedLink(event: MouseEvent) {
           </div>
           <HtmlPreview v-if="previewFile" :file="previewFile" @close="closePreview" @expand="previewExpanded=$event"/>
         </section>
-        <section v-if="tab==='materials'"><div class="section-head"><div><h2>课程资料</h2><p>预览或下载课程文件</p></div><button v-if="isTeacher" class="primary" @click="panel='material'"><Upload :size="17"/> 上传资料</button></div><div v-if="materials.length" class="homework-materials"><article v-for="m in materials" :key="m.id" class="pane"><h3 v-if="m.title!==m.attachment.name">{{m.title}}</h3><FileCard :file="m.attachment" @preview="businessPreview=$event"/><p class="hint">{{fmt(m.created_at)}} · <span :class="m.index_status==='ready'?'index-ready':m.index_status==='failed'?'index-failed':'index-pending'">{{m.index_status==='ready'?'已建立知识索引':m.index_status==='failed'?'未建立索引：'+(m.index_error || '请重试'):'正在建立索引'}}</span></p></article></div><div v-else class="empty"><FolderOpen :size="32"/><h2>暂无课程资料</h2></div></section>
+        <section v-if="tab==='materials'"><div class="section-head"><div><h2>课程资料</h2><p>预览或下载课程文件；知识索引由后台执行</p><p v-if="materialRefreshError" role="alert">{{materialRefreshError}} <button @click="refreshMaterials">重试刷新</button></p></div><button v-if="isTeacher" class="primary" @click="panel='material'"><Upload :size="17"/> 上传资料</button></div><div v-if="materials.length" class="homework-materials"><article v-for="m in materials" :key="m.id" class="pane"><h3 v-if="m.title!==m.attachment.name">{{m.title}}</h3><FileCard :file="m.attachment" @preview="businessPreview=$event"/><p class="hint">{{fmt(m.created_at)}}</p><MaterialIndexStatus :material-id="m.id" :status="m.index_status" :error="m.index_error" :task="m.index_task" :is-teacher="isTeacher" @changed="refreshMaterials"/></article></div><div v-else class="empty"><FolderOpen :size="32"/><h2>暂无课程资料</h2></div></section>
         <section v-if="tab==='assignments'">
           <div class="section-head"><div><h2>作业</h2><p>查看要求与提交记录</p></div><button v-if="isTeacher" class="primary" @click="panel='assignment'"><Plus :size="17"/> 发布作业</button></div>
           <AssignmentWorkspace v-if="currentAssignment" :key="currentAssignment.id" :assignment-id="currentAssignment.id" :is-teacher="isTeacher" @back="backToAssignments" @preview="businessPreview=$event"/>

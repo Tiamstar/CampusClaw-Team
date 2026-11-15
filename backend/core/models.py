@@ -206,6 +206,36 @@ class KnowledgeEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class MaterialIndexTask(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name="index_tasks")
+    requested_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    retry_of = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
+    request_key = models.CharField(max_length=100)
+    payload_hash = models.CharField(max_length=64)
+    source = models.JSONField(default=dict)
+    status = models.CharField(max_length=16, default="queued")
+    phase = models.CharField(max_length=20, default="queued")
+    revision = models.PositiveIntegerField(default=1)
+    lease_token = models.UUIDField(null=True, blank=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+    request_id = models.CharField(max_length=64, blank=True)
+    error_code = models.CharField(max_length=40, blank=True)
+    error = models.CharField(max_length=500, blank=True)
+    events = models.JSONField(default=list)
+    result = models.JSONField(default=dict)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["course", "requested_by", "request_key"], name="unique_index_request"),
+            models.UniqueConstraint(fields=["material"], condition=models.Q(status__in=["queued", "running"]), name="one_active_material_index"),
+        ]
+        indexes = [models.Index(fields=["status", "created_at"], name="index_task_queue")]
+
+
 class KnowledgeChunk(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

@@ -89,6 +89,22 @@ services:
       backend: {condition: service_healthy}
     restart: unless-stopped
     command: python manage.py scan_forum_reminders --loop
+  index-worker:
+    mem_limit: 1g
+    image: campusclaw-team-backend
+    environment: *backend-environment
+    volumes:
+      - uploads:/app/media:ro
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    command: python manage.py process_index_tasks --loop
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "process_index_tasks", "--health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
   frontend:
     build: ./frontend
     ports: ["127.0.0.1:${APP_PORT:-5174}:80"]

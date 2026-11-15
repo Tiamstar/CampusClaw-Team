@@ -103,7 +103,7 @@ class WorkflowTests(TestCase):
         course_id = created.data["id"]
         self.sc.post("/api/courses/join/", {"code": created.data["join_code"]})
         material = self.tc.post(f"/api/courses/{course_id}/materials/", {"file": self.upload("notes.pdf")}, format="multipart")
-        self.assertEqual(material.status_code, 201)
+        self.assertEqual(material.status_code, 202)
         file_id = material.data["attachment"]["id"]
         self.assertEqual(self.download_status(self.sc, file_id), 200)
         self.assertEqual(self.download_status(self.oc, file_id), 403)

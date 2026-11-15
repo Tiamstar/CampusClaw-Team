@@ -1,3 +1,4 @@
+from . import index_views
 from . import review_views
 from . import diagnostic_views
 from . import graph_views
@@ -91,6 +92,8 @@ urlpatterns = [
     path("courses/<int:course_id>/knowledge/search/", agent_views.knowledge_search),
     path("courses/<int:course_id>/knowledge/reindex/", agent_views.reindex_course),
     path("materials/<int:material_id>/reindex/", agent_views.reindex_material),
+    path("materials/<int:material_id>/index-tasks/", index_views.task_history),
+    path("index-tasks/<int:task_id>/", index_views.task_detail),
     path("materials/<int:material_id>/preview/", agent_views.material_preview),
     path("agent/threads/", agent_views.threads),
     path("agent/threads/<int:thread_id>/messages/", agent_views.thread_messages),

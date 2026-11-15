@@ -137,44 +137,17 @@ async def embed_texts(texts):
 
 
 def index_material(material, strategy="auto", max_chars=800, overlap=80, separators=None):
+    # Explicit maintenance commands can still index synchronously. HTTP uses the queue.
+    from .index_service import prepare_index, persist_index
+    from django.db import transaction
     entry, _ = KnowledgeEntry.objects.get_or_create(material=material)
-    entry.status = KnowledgeEntry.Status.PENDING
-    entry.error_message = ""
-    entry.save(update_fields=["status", "error_message"])
     try:
-        with material.attachment.file.open("rb") as source:
-            raw = source.read()
-        suffix = Path(material.attachment.original_name).suffix.lower()
-        temp = settings.MEDIA_ROOT / f".extract-{material.id}{suffix}"
-        temp.parent.mkdir(parents=True, exist_ok=True)
-        temp.write_bytes(raw)
-        try:
-            body, parser = extract_text(temp, mimetypes.guess_type(material.attachment.original_name)[0] or "")
-        finally:
-            temp.unlink(missing_ok=True)
-        if not body.strip():
-            raise ValueError("文件中没有可索引的文本")
-        pieces = split_chunks(body, strategy, max_chars, overlap, separators)
-        if not pieces:
-            raise ValueError("未能从资料生成切片")
-        from asgiref.sync import async_to_sync
-        vectors, model = async_to_sync(embed_texts)([piece[0] for piece in pieces])
-        entry.chunks.all().delete()
-        entry.body_text = body
-        entry.parser = parser
-        entry.content_hash = hashlib.sha256(raw).hexdigest()
-        entry.chunk_strategy = strategy
-        entry.status = KnowledgeEntry.Status.READY
-        entry.indexed_at = timezone.now()
-        entry.save()
-        for index, ((chunk_text, start, end), vector) in enumerate(zip(pieces, vectors)):
-            chunk = KnowledgeChunk.objects.create(entry=entry, chunk_index=index, chunk_text=chunk_text,
-                start_offset=start, end_offset=end, status=KnowledgeChunk.Status.READY)
-            ChunkEmbedding.objects.create(chunk=chunk, embedding=vector, model=model, dimensions=len(vector))
-    except Exception as exc:
-        entry.status = KnowledgeEntry.Status.FAILED
-        entry.error_message = str(exc)[:2000]
-        entry.save(update_fields=["status", "error_message"])
+        prepared = prepare_index(material, strategy, max_chars, overlap, separators)
+        with transaction.atomic():
+            entry = KnowledgeEntry.objects.select_for_update().get(pk=entry.pk)
+            persist_index(entry, prepared)
+    except Exception:
+        KnowledgeEntry.objects.filter(pk=entry.pk).update(status="failed", error_message="索引失败，请检查文件或服务后重试")
         raise
     return entry
 

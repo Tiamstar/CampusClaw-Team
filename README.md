@@ -16,7 +16,7 @@
 | AI | OpenAI 兼容或 Anthropic 接口、默认 mock、SSE、技能目录、MCP Streamable HTTP |
 | 执行与部署 | Docker Compose、Nginx、Mailpit、内部执行代理、临时隔离容器 |
 
-Python 的四个组件都使用各自 requirements.lock。当前异步对话依附 SSE 请求，资料索引仍在请求内执行。持久化消息队列列入下一轮工作。
+Python 的四个组件都使用各自 requirements.lock。当前异步对话依附 SSE 请求；资料索引已使用数据库持久化任务及独立 index-worker，支持 202 受理、取消、重试和重启恢复，见 [索引交付](docs/material-index-delivery.md)。AI 作业批改任务仍待接入。
 
 ## 教学技能与应用
 
