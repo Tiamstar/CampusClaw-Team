@@ -2,7 +2,9 @@ from asgiref.sync import async_to_sync
 from django.http import JsonResponse, HttpResponse
 from .agent_views import agent_auth_required, _json, _accessible_thread
 from .agent_runtime import require_course_member
-from .models import AssistantConfig, UserSkill, MCPServer, AgentRun
+from .models import CourseAssistantConfig, Course, Membership, UserSkill, MCPServer, AgentRun
+from django.db import transaction
+from .audit import record_audit
 from .skill_catalog import APPS
 from .skill_runtime import skill_list, skill_summary, parse_upload, validate_refs, load_config
 from .mcp_client import discover, public_server, validate_url
@@ -14,8 +16,9 @@ def manager(user):
     return user.is_staff or user.can_create_course or user.memberships.filter(role="teacher").exists()
 
 
-def config_data(c):
-    return {"app_id": c.app_id, "template": c.template, "skill_ids": c.skill_ids, "mcp_refs": c.mcp_refs, "use_knowledge": c.use_knowledge}
+def config_data(c, user):
+    return {"app_id": c.app_id, "template": c.template, "skill_ids": c.skill_ids, "mcp_refs": c.mcp_refs, "use_knowledge": c.use_knowledge, "revision": c.revision,
+            "can_edit": Membership.objects.filter(course_id=c.course_id, user=user, role="teacher").exists()}
 
 
 @agent_auth_required
@@ -64,36 +67,50 @@ def skill_detail(request, skill_id):
 def assistant_config(request, course_id):
     if not require_course_member(request.user, course_id):
         return JsonResponse({"error": "课程不存在"}, status=404)
-    c = load_config(request.user, course_id)
     if request.method == "GET":
-        return JsonResponse(config_data(c))
+        return JsonResponse(config_data(load_config(request.user, course_id), request.user))
     if request.method != "PUT":
         return HttpResponse(status=405)
+    if not Membership.objects.filter(course_id=course_id, user=request.user, role="teacher").exists():
+        return JsonResponse({"error": "仅任课教师可修改课程助手"}, status=403)
     data = _json(request)
     try:
         if not isinstance(data, dict):
             raise ValueError("配置必须是 JSON 对象")
-        app = data.get("app_id", c.app_id)
-        if app not in {a["id"] for a in APPS}:
-            raise ValueError("应用不存在")
-        default_ids = next(item["default_skill_ids"] for item in APPS if item["id"] == app)
-        ids = data.get("skill_ids", default_ids if app != c.app_id else c.skill_ids)
-        available = {s["id"] for s in skill_list(request.user)}
-        if not isinstance(ids, list) or len(ids) > 20 or any(not isinstance(i, str) or i not in available for i in ids):
-            raise ValueError("技能不存在或超过 20 个")
-        template = data.get("template", c.template)
-        if not isinstance(template, str) or len(template) > 12000:
-            raise ValueError("提示词模板不能超过 12000 字符")
-        refs = data.get("mcp_refs", c.mcp_refs)
-        if refs != c.mcp_refs:
-            validate_refs(request.user, refs)
-        c.app_id, c.template, c.skill_ids, c.mcp_refs = app, template, ids, refs
-        c.use_knowledge = bool(data.get("use_knowledge", c.use_knowledge))
-        AssistantConfig.objects.update_or_create(owner=request.user, course_id=course_id, defaults={
-            'app_id': c.app_id, 'template': c.template, 'skill_ids': c.skill_ids,
-            'mcp_refs': c.mcp_refs, 'use_knowledge': c.use_knowledge,
-        })
-        return JsonResponse(config_data(c))
+        with transaction.atomic():
+            Course.objects.select_for_update().get(pk=course_id)
+            # Recheck course-specific authority after acquiring the write lock.
+            if not Membership.objects.filter(course_id=course_id, user=request.user, role="teacher").exists():
+                return JsonResponse({"error": "任课教师权限已撤销"}, status=403)
+            c = load_config(request.user, course_id)
+            if type(data.get("revision")) is not int or data["revision"] != c.revision:
+                return JsonResponse({"error": "配置版本已变化或缺失，请刷新后重试"}, status=409)
+            app = data.get("app_id", c.app_id)
+            if not isinstance(app, str) or app not in {a["id"] for a in APPS}:
+                raise ValueError("应用不存在")
+            default_ids = next(item["default_skill_ids"] for item in APPS if item["id"] == app)
+            ids = data.get("skill_ids", default_ids if app != c.app_id else c.skill_ids)
+            from .skill_catalog import BUILTIN_SKILLS, LEGACY_SKILL_IDS
+            if not isinstance(ids, list) or len(ids) > 20 or any(not isinstance(i, str) for i in ids):
+                raise ValueError("技能列表最多 20 项")
+            ids = list(dict.fromkeys(LEGACY_SKILL_IDS.get(i, i) for i in ids))
+            if any(i not in {s["id"] for s in BUILTIN_SKILLS} for i in ids):
+                raise ValueError("课程助手仅可绑定内置技能；个人上传保持私有")
+            template = data.get("template", c.template)
+            if not isinstance(template, str) or len(template) > 12000:
+                raise ValueError("提示词模板不能超过 12000 字符")
+            refs = data.get("mcp_refs", c.mcp_refs)
+            validate_refs(request.user, refs, shared_only=True)
+            knowledge = data.get("use_knowledge", c.use_knowledge)
+            if type(knowledge) is not bool:
+                raise ValueError("知识库设置必须是布尔值")
+            c.app_id, c.template, c.skill_ids, c.mcp_refs = app, template, ids, list(dict.fromkeys(refs))
+            c.use_knowledge, c.edited_by = knowledge, request.user
+            c.revision += 1
+            c.save()
+            record_audit(actor_id=request.user.pk, course_id=course_id, action="assistant.configure",
+                         object_ref=f"course:{course_id}:revision:{c.revision}", status="ok", request_id=request.request_id)
+        return JsonResponse(config_data(c, request.user))
     except ValueError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
 
@@ -187,11 +204,12 @@ def tool_test(request, thread_id):
     if name not in allowed:
         return JsonResponse({"error": "请先将工具绑定到本课程助手"}, status=400)
     run = AgentRun.objects.create(thread=thread, model="manual-tool-test")
+    event(run, "context", {"config_revision": config.revision if config else None, "app": app["id"], "skills": [s["id"] for s in selected]})
     event(run, "tool_call", {"name": name, "arguments": arguments, "round": 1, "manual": True})
     start = time.monotonic()
     try:
         async def execute():
-            return await asyncio.wait_for(registry.execute(name, arguments, ToolContext(request.user, thread, frozenset(permissions), request.request_id)), 50)
+            return await asyncio.wait_for(registry.execute(name, arguments, ToolContext(request.user, thread, frozenset(permissions), request.request_id, config.revision if config else None)), 50)
         result = async_to_sync(execute)()
         status = "error" if isinstance(result, dict) and result.get("isError") else "ok"
         run.status = "completed" if status == "ok" else "failed"

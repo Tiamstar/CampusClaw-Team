@@ -269,6 +269,7 @@ class ToolContext:
     thread: AgentThread | None = None
     permissions: frozenset[str] = frozenset()
     request_id: str = ""
+    config_revision: int | None = None
 
 
 class ModelAdapter:
@@ -354,19 +355,13 @@ class ToolRegistry:
             )
 
     async def _execute_authorized(self, name, arguments, context):
+        from .skill_runtime import assert_runtime_current
+        await sync_to_async(assert_runtime_current)(context.user, context.thread, context.config_revision)
         spec, function = self.get(name)
         if not isinstance(arguments, dict):
             raise ValueError("工具参数必须是 JSON 对象")
         if spec.required_permission not in context.permissions:
             raise PermissionError("当前运行没有该工具权限")
-        if context.thread:
-            def still_authorized():
-                thread = AgentThread.objects.filter(pk=context.thread.pk, owner=context.user, owner__is_active=True).first()
-                if not thread or thread.course_id != context.thread.course_id:
-                    return False
-                return not thread.course_id or Membership.objects.filter(course_id=thread.course_id, user=context.user).exists()
-            if not await sync_to_async(still_authorized)():
-                raise PermissionError("对话或课程访问权限已撤销")
         errors = list(Draft202012Validator(spec.input_schema).iter_errors(arguments))
         if errors:
             raise ValueError("工具参数无效: " + errors[0].message)
@@ -374,6 +369,7 @@ class ToolRegistry:
             raise RuntimeError("工具尚未绑定执行器")
         result = function(arguments, context)
         result = await result if inspect.isawaitable(result) else result
+        await sync_to_async(assert_runtime_current)(context.user, context.thread, context.config_revision)
         if not Draft202012Validator(spec.output_schema).is_valid(result):
             raise ValueError("工具返回值不符合声明格式")
         return result

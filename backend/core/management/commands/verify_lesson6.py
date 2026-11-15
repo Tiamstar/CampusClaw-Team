@@ -10,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from core.models import User, Course, Membership, AssistantConfig, MCPServer, AgentThread, StoredFile, Material
+from core.models import User, Course, Membership, CourseAssistantConfig, MCPServer, AgentThread, StoredFile, Material
 from core.mcp_client import discover
 from core.agent_runtime import index_material
 
@@ -30,14 +30,14 @@ class Command(BaseCommand):
             Path(options['credentials']).write_text(json.dumps({'email':user.email,'password':password}),encoding='utf-8')
         course,_=Course.objects.get_or_create(name='第六课 · AI 能力实验室',created_by=user)
         Membership.objects.get_or_create(user=user,course=course,defaults={'role':'teacher'})
-        config,_=AssistantConfig.objects.get_or_create(owner=user,course=course)
-        server,_=MCPServer.objects.get_or_create(owner=user,name='campus-tools',defaults={'url':'http://campus-tools:8100/mcp','token_env':'MCP_CAMPUS_TOKEN'})
+        config,_=CourseAssistantConfig.objects.get_or_create(course=course,defaults={"edited_by":user})
+        server,_=MCPServer.objects.get_or_create(is_shared=True,name='platform-tools',defaults={'owner':user,'url':'http://campus-tools:8100/mcp','token_env':'MCP_CAMPUS_TOKEN'})
         server.tools,server.session_id=async_to_sync(discover)(server);server.connected=True;server.error='';server.save()
         report={'provider':os.getenv('MODEL_PROVIDER'),'course_id':course.id,'checks':[],'traces':[]}
         self.stdout.write('MCP discovered: '+', '.join(t['name'] for t in server.tools))
         client=APIClient();client.credentials(HTTP_AUTHORIZATION='Bearer '+str(RefreshToken.for_user(user).access_token))
         config.app_id='general';config.template='你是 {{course}} 的实验助教。请用中文回答，先给结论，再列证据。';config.use_knowledge=False
-        config.skill_ids=['learning-analytics'];config.mcp_refs=['formula_hint@campus-tools','python_execute@campus-tools','shell_execute@campus-tools','browser_open@campus-tools'];config.save()
+        config.skill_ids=['learning-analytics'];config.mcp_refs=['formula_hint@platform-tools','python_execute@platform-tools','shell_execute@platform-tools','browser_open@platform-tools'];config.revision += 1;config.save()
 
         def ask(label,content,knowledge=False):
             if options['only'] and options['only'] not in label:

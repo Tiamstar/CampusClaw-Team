@@ -234,7 +234,7 @@ def agent_stream(request, thread_id):
     content = str(data.get("content") or "").strip()
     if not content:
         return JsonResponse({"error": "消息不能为空"}, status=400)
-    from .skill_runtime import runtime_config, configure_registry
+    from .skill_runtime import runtime_config, configure_registry, assert_runtime_current
     config, app, selected_skills, mcp_tools, unavailable_refs = runtime_config(user, thread.course_id)
     use_materials = bool(data.get("use_course_materials", config.use_knowledge if config else False))
     attachment_ids = [int(value) for value in (data.get("attachments") or []) if str(value).isdigit()]
@@ -253,12 +253,15 @@ def agent_stream(request, thread_id):
         model_name = run.model
         completed = False
         round_number = 0
+        async def check_current():
+            await sync_to_async(assert_runtime_current)(user, thread, config.revision if config else None)
         async def record_trace(kind, payload):
             await sync_to_async(event)(run, kind, {"round": round_number, **payload})
         trace_token = trace_sink.set(record_trace)
         try:
-            await record_trace("context", {"app": app["id"], "template": config.template if config else "",
-                "skills": [{"id": s["id"], "name": s["name"], "description": s["description"]} for s in selected_skills],
+            await check_current()
+            await record_trace("context", {"config_revision": config.revision if config else None, "app": app["id"], "template": config.template if config else "",
+                "skills": [{"id": s["id"], "name": s["name"], "version": s.get("version", ""), "description": s["description"]} for s in selected_skills],
                 "knowledge_enabled": use_materials, "mcp_refs": config.mcp_refs if config else [], "unavailable_tools": unavailable_refs})
             await sync_to_async(event)(run, "message_start", {"run_id": run.id})
             yield f"event: message_start\ndata: {json.dumps({'run_id': run.id, 'message_id': user_message.id}, ensure_ascii=False)}\n\n"
@@ -269,8 +272,10 @@ def agent_stream(request, thread_id):
                     hits = await search(thread.course_id, content, "hybrid", 4)
                 except RuntimeErrorWithStatus:
                     raise
+                await check_current()
                 if not hits:
                     await record_trace("retrieval", {"query": content, "top_k": 4, "returned_chunks": [], "llm_called": False})
+                    await check_current()
                     assistant = await sync_to_async(AgentMessage.objects.create)(thread=thread, role="assistant", content=NO_HIT, citations=[])
                     run.status = AgentRun.Status.COMPLETED
                     run.finished_at = timezone.now()
@@ -283,6 +288,7 @@ def agent_stream(request, thread_id):
                 citations = hits
                 await record_trace("retrieval", {"query": content, "top_k": 4, "returned_chunks": hits, "whole_knowledge_base_sent": False})
                 for citation in citations:
+                    await check_current()
                     await sync_to_async(event)(run, "citation", citation)
                     yield f"event: citation\ndata: {json.dumps(citation, ensure_ascii=False)}\n\n"
             history = await sync_to_async(list)(thread.messages.order_by("created_at").values("role", "content"))
@@ -291,7 +297,7 @@ def agent_stream(request, thread_id):
             system += "\n当前应用：" + app["prompt"]
             if config and config.template:
                 template = config.template.replace("{{course}}", thread.course.name if thread.course else "").replace("{{question}}", content)
-                system += "\n用户提示词模板：\n" + template
+                system += "\n课程提示词模板：\n" + template
             if selected_skills:
                 system += "\n已绑定技能（仅摘要）：\n" + "\n".join(f"{s['id']}: {s['name']} — {s['description']}" for s in selected_skills)
                 system += "\n执行适合的技能前必须调用 read_skill 获取完整指令；参考文件用 read_skill_resource 按需读取。每次按目标采用一种主要教学模式，不叠加互相矛盾的教学约束。不得声称已执行未加载的技能。"
@@ -313,13 +319,13 @@ def agent_stream(request, thread_id):
             permissions = {"artifact.create"}
             if thread.course_id:
                 permissions.add("course.read")
-            context = ToolContext(user, thread, frozenset(permissions), request.request_id)
+            context = ToolContext(user, thread, frozenset(permissions), request.request_id, config.revision if config else None)
             descriptions = configure_registry(registry, selected_skills, mcp_tools)
             if selected_skills:
                 permissions.add("skill.read")
             if mcp_tools:
                 permissions.add("mcp.call")
-            context = ToolContext(user, thread, frozenset(permissions), request.request_id)
+            context = ToolContext(user, thread, frozenset(permissions), request.request_id, config.revision if config else None)
             tools = model_tools(registry, permissions)
             for tool in tools:
                 name = tool["function"]["name"]
@@ -335,6 +341,7 @@ def agent_stream(request, thread_id):
             allowed_names = {t["function"]["name"] for t in tools}
             total_calls = 0
             for round_number in range(1, 7):
+                await check_current()
                 if round_number == 6 or total_calls >= 12:
                     tools = []
                     messages.append({"role": "system", "content": "已达到工具调用预算。请根据已有证据完成回答，明确未完成部分，不再调用工具。"})
@@ -344,6 +351,7 @@ def agent_stream(request, thread_id):
                     state = await sync_to_async(lambda: AgentRun.objects.filter(pk=run.pk).values_list("status", flat=True).first())()
                     if state == AgentRun.Status.CANCELLED:
                         raise asyncio.CancelledError
+                    await check_current()
                     model_name = model or model_name
                     if isinstance(delta, dict):
                         pending_calls = delta.get("tool_calls") or []
@@ -357,6 +365,7 @@ def agent_stream(request, thread_id):
                     break
                 messages.append({"role": "assistant", "content": "".join(round_text), "tool_calls": pending_calls})
                 for call in pending_calls:
+                    await check_current()
                     name = call.get("function", {}).get("name", "")
                     parse_error = None
                     try:
@@ -401,6 +410,7 @@ def agent_stream(request, thread_id):
                     messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result, ensure_ascii=False)})
             else:
                 answer_parts.append("\n本次工具调用已达到上限。以上仅包含已取得的结果，尚未完成的步骤可在下一条消息继续。")
+            await check_current()
             answer = "".join(answer_parts)
             assistant, html_files = await sync_to_async(_finish_answer)(user, thread, run, answer, citations, model_name, artifacts)
             completed = True

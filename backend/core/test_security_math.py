@@ -7,7 +7,7 @@ from asgiref.sync import async_to_sync
 from django.test import TestCase, SimpleTestCase, TransactionTestCase, override_settings
 from rest_framework.test import APIClient
 
-from .models import User, Course, Membership, AssistantConfig, AuthRateLimit
+from .models import User, Course, Membership, AssistantConfig, CourseAssistantConfig, AuthRateLimit
 from .mcp_client import read_response, rpc
 
 
@@ -52,8 +52,12 @@ class AuthAndPrivacyTests(TestCase):
         for _ in range(2):
             self.assertEqual(self.client.get(url).status_code, 200)
         self.assertFalse(AssistantConfig.objects.exists())
-        self.assertEqual(self.client.put(url, {'template': 'saved'}, format='json').status_code, 200)
-        self.assertEqual(AssistantConfig.objects.get().template, 'saved')
+        self.assertFalse(CourseAssistantConfig.objects.exists())
+        self.assertEqual(self.client.put(url, {'template': 'saved', 'revision': 0}, format='json').status_code, 403)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {RefreshToken.for_user(self.teacher).access_token}')
+        self.assertEqual(self.client.put(url, {'template': 'saved', 'revision': 0}, format='json').status_code, 200)
+        self.assertEqual(CourseAssistantConfig.objects.get().template, 'saved')
+        self.assertFalse(AssistantConfig.objects.exists())
 
     def test_members_only_teacher_receives_email(self):
         url = f'/api/courses/{self.course.id}/members/'

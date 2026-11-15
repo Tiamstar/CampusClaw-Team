@@ -5,7 +5,7 @@ from pathlib import PurePosixPath
 from zipfile import ZipFile, BadZipFile
 from asgiref.sync import sync_to_async
 from django.db.models import Q
-from .models import UserSkill, AssistantConfig, MCPServer
+from .models import UserSkill, CourseAssistantConfig, MCPServer, Membership, AgentThread
 from .skill_catalog import APPS, BUILTIN_SKILLS, LEGACY_SKILL_IDS
 from .agent_runtime import ToolSpec
 from .mcp_client import rpc
@@ -86,7 +86,7 @@ def parse_upload(upload):
     return name[:100], description[:500], body, resources, refs
 
 
-def validate_refs(user, refs):
+def validate_refs(user, refs, *, shared_only=False):
     if not isinstance(refs, list) or len(refs) > 20 or any(not isinstance(r, str) for r in refs):
         raise ValueError("工具引用最多 20 项")
     from .agent_runtime import builtin_tool_registry
@@ -97,19 +97,35 @@ def validate_refs(user, refs):
         if not re.fullmatch(r"[a-z][a-z0-9_]{0,59}@[a-z][a-z0-9-]{0,59}", ref):
             raise ValueError("工具引用格式应为 tool_name@server-name")
         name, server_name = ref.split("@")
-        server = MCPServer.objects.filter(Q(owner=user) | Q(is_shared=True), name=server_name).first()
+        server = MCPServer.objects.filter(Q(is_shared=True) if shared_only else (Q(owner=user) | Q(is_shared=True)), name=server_name).first()
         if not server or not server.connected or name not in {t["name"] for t in server.tools}:
             raise ValueError("服务器不存在、未连接或工具尚未被发现")
 
 
 def load_config(user, course_id):
-    config = AssistantConfig.objects.filter(owner=user, course_id=course_id).first()
+    # Old per-account records remain private; never publish them implicitly.
+    config = CourseAssistantConfig.objects.filter(course_id=course_id).first()
     if config is None:
-        config = AssistantConfig(owner=user, course_id=course_id, skill_ids=list(APPS[0]['default_skill_ids']))
-    available = {skill["id"] for skill in skill_list(user)}
+        config = CourseAssistantConfig(course_id=course_id, skill_ids=list(APPS[0]['default_skill_ids']))
+    available = {skill["id"] for skill in BUILTIN_SKILLS}
     migrated = [LEGACY_SKILL_IDS.get(skill_id, skill_id) for skill_id in config.skill_ids]
     config.skill_ids = list(dict.fromkeys(skill_id for skill_id in migrated if skill_id in available))
     return config
+
+
+def assert_runtime_current(user, thread, revision):
+    """Stop stale or revoked work before invoking tools or releasing results."""
+    if not thread:
+        return
+    current = AgentThread.objects.filter(pk=thread.pk, owner=user, owner__is_active=True).first()
+    if not current or current.course_id != thread.course_id:
+        raise PermissionError("对话访问权限已撤销")
+    if thread.course_id:
+        if not Membership.objects.filter(course_id=thread.course_id, user=user).exists():
+            raise PermissionError("课程访问权限已撤销")
+        actual = CourseAssistantConfig.objects.filter(course_id=thread.course_id).values_list("revision", flat=True).first() or 0
+        if revision is not None and actual != revision:
+            raise PermissionError("课程助手配置已更新，请重新提问")
 
 
 
@@ -165,6 +181,7 @@ def configure_registry(registry, selected, servers):
                 json={"files": {"SKILL.md": skill["instructions"], **skill["resources"]}, "binary_files": skill.get("binary_resources", {}), "entrypoint": path, "args": args.get("args", [])})
             if response.status_code >= 400:
                 raise ValueError("隔离执行失败：" + response.text[:200])
+            await sync_to_async(assert_runtime_current)(context.user, context.thread, context.config_revision)
             result = await sync_to_async(save_execution_files)(response.json(), context)
             result["isError"] = result["exit_code"] != 0
             return result
@@ -178,10 +195,11 @@ def configure_registry(registry, selected, servers):
         name = f"mcp_{server.id}_{tool['name']}"
         def bind(server_id, tool_name):
             async def execute(args, context):
-                current = await sync_to_async(lambda: MCPServer.objects.filter(Q(owner=context.user) | Q(is_shared=True), id=server_id).first())()
+                current = await sync_to_async(lambda: MCPServer.objects.filter(Q(is_shared=True), id=server_id).first())()
                 if not current or not current.connected or tool_name not in {t["name"] for t in current.tools}:
                     raise ValueError("MCP 服务器已断开或工具不再可用")
                 result, _ = await rpc(current, "tools/call", {"name": tool_name, "arguments": args})
+                await sync_to_async(assert_runtime_current)(context.user, context.thread, context.config_revision)
                 artifact_ids = []
                 # Persist browser screenshots as protected conversation artifacts.
                 import base64, json
@@ -236,7 +254,7 @@ def runtime_config(user, course_id):
         if "@" not in ref:
             continue
         name, server_name = ref.split("@", 1)
-        server = MCPServer.objects.filter(Q(owner=user) | Q(is_shared=True), name=server_name).first()
+        server = MCPServer.objects.filter(Q(is_shared=True), name=server_name).first()
         tool = next((t for t in server.tools if t["name"] == name), None) if server else None
         if server and server.connected and tool:
             servers.append((server, tool))

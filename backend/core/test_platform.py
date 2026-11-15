@@ -9,7 +9,7 @@ from django.test import TransactionTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, Course, Membership, AgentThread, MCPServer, AssistantConfig, AgentRun
+from .models import User, Course, Membership, AgentThread, MCPServer, CourseAssistantConfig, AgentRun
 from .skill_runtime import parse_upload
 from .agent_runtime import trace_record
 
@@ -26,7 +26,11 @@ class PlatformTests(TransactionTestCase):
         self.client = self.client_for(self.owner)
         self.oc = self.client_for(self.other)
         self.sc = self.client_for(self.student)
-        self.config = AssistantConfig.objects.create(owner=self.owner,course=self.course,template='课程：{{course}}；问题：{{question}}',skill_ids=['learning-analytics'])
+        self.config = CourseAssistantConfig.objects.create(edited_by=self.owner,course=self.course,template='课程：{{course}}；问题：{{question}}',skill_ids=['learning-analytics'])
+
+    def put_config(self, data, **kwargs):
+        revision = self.client.get(f'/api/courses/{self.course.id}/assistant/').json()['revision']
+        return self.client.put(f'/api/courses/{self.course.id}/assistant/', {**data, 'revision': revision}, **kwargs)
 
     def client_for(self,user):
         client=APIClient();client.credentials(HTTP_AUTHORIZATION='Bearer '+str(RefreshToken.for_user(user).access_token));return client
@@ -47,7 +51,7 @@ class PlatformTests(TransactionTestCase):
         sid=response.json()['id']
         self.assertEqual(self.oc.get(f'/api/agent/skills/{sid}/').status_code,404)
         self.assertEqual(self.oc.get(f'/api/courses/{self.course.id}/assistant/').status_code,404)
-        self.assertEqual(self.sc.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':[sid]},format='json').status_code,400)
+        self.assertEqual(self.sc.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':[sid]},format='json').status_code,403)
         self.assertEqual(self.oc.get(f'/api/agent/threads/{self.thread.id}/traces/').status_code,404)
 
     def test_zip_supports_scripts_but_rejects_traversal(self):
@@ -76,10 +80,10 @@ class PlatformTests(TransactionTestCase):
         with patch('core.platform_views.discover',new=AsyncMock(return_value=([tool],''))):
             connected=self.client.post(f"/api/agent/mcp/{server['id']}/",{'action':'connect'},format='json').json()
         self.assertTrue(connected['connected'])
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'mcp_refs':['formula_hint@my-tools']},format='json')
-        self.assertEqual(response.status_code,200)
+        response=self.put_config({'mcp_refs':['formula_hint@my-tools']},format='json')
+        self.assertEqual(response.status_code,400)
         self.client.post(f"/api/agent/mcp/{server['id']}/",{'action':'disconnect'},format='json')
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'mcp_refs':['missing@my-tools']},format='json')
+        response=self.put_config({'mcp_refs':['missing@my-tools']},format='json')
         self.assertEqual(response.status_code,400)
         server=MCPServer.objects.get(id=server['id']);self.assertFalse(server.connected);self.assertEqual(server.tools,[])
 
@@ -146,7 +150,7 @@ class PlatformTests(TransactionTestCase):
         self.assertEqual(AgentRun.objects.get(thread=self.thread).events.get(event_type='tool_result').payload['status'],'rejected')
 
 
-    def test_students_can_bind_shared_tools_without_server_management(self):
+    def test_teacher_binds_shared_tools_for_students_without_server_management(self):
         service=User.objects.create_user('service@example.com',None,is_active=False)
         server=MCPServer.objects.create(owner=service,name='platform-tools',url='http://campus-tools:8100/mcp',
             token_env='MCP_CAMPUS_TOKEN',is_shared=True,connected=True,
@@ -154,7 +158,7 @@ class PlatformTests(TransactionTestCase):
         result=self.sc.get('/api/agent/platform-tools/').json()
         self.assertEqual(result[0]['id'],server.id)
         self.assertNotIn('token_env',result[0]);self.assertNotIn('url',result[0])
-        bound=self.sc.put(f'/api/courses/{self.course.id}/assistant/',{'mcp_refs':['formula_hint@platform-tools']},format='json')
+        bound=self.put_config({'mcp_refs':['formula_hint@platform-tools']},format='json')
         self.assertEqual(bound.status_code,200)
         self.assertEqual(self.sc.get('/api/agent/mcp/').status_code,403)
 
@@ -206,10 +210,10 @@ class PlatformTests(TransactionTestCase):
         detail=self.client.get('/api/agent/skills/learning-analytics/').json()
         self.assertIn('scripts/summarize_numbers.py', detail['resources'])
 
-    def test_teaching_bindings_remain_private_and_load_on_demand(self):
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':['programming-tutor']},format='json')
+    def test_teaching_bindings_are_shared_and_load_on_demand(self):
+        response=self.put_config({'skill_ids':['programming-tutor']},format='json')
         self.assertEqual(response.status_code,200)
-        self.assertNotIn('programming-tutor',self.sc.get(f'/api/courses/{self.course.id}/assistant/').json()['skill_ids'])
+        self.assertIn('programming-tutor',self.sc.get(f'/api/courses/{self.course.id}/assistant/').json()['skill_ids'])
         with patch.dict(os.environ,{'MODEL_PROVIDER':'mock'}):
             self.stream('帮我理解一段报错')
         request=AgentRun.objects.get(thread=self.thread).events.get(event_type='llm_request').payload
@@ -240,11 +244,12 @@ class PlatformTests(TransactionTestCase):
     def test_application_selects_teaching_defaults_and_custom_upload_is_preserved(self):
         upload=SimpleUploadedFile('SKILL.md',b'---\nname: my-teaching\ndescription: custom learning workflow\n---\nUse the supplied learning evidence.')
         sid=self.client.post('/api/agent/skills/upload/',{'file':upload}).json()['id']
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'app_id':'lesson'},format='json')
+        response=self.put_config({'app_id':'lesson'},format='json')
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.json()['skill_ids'],['lesson-plan-builder','differentiated-instruction'])
-        response=self.client.put(f'/api/courses/{self.course.id}/assistant/',{'skill_ids':['lesson-plan-builder',sid]},format='json')
-        self.assertEqual(response.status_code,200)
+        response=self.put_config({'skill_ids':['lesson-plan-builder',sid]},format='json')
+        self.assertEqual(response.status_code,400)
         result=self.client.get(f'/api/courses/{self.course.id}/assistant/').json()
-        self.assertIn(sid,result['skill_ids'])
+        self.assertNotIn(sid,result['skill_ids'])
+        self.assertEqual(self.client.get(f'/api/agent/skills/{sid}/').status_code,200)
         self.assertEqual(self.sc.get(f'/api/agent/skills/{sid}/').status_code,404)

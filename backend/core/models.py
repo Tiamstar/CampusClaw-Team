@@ -281,6 +281,18 @@ class AssistantConfig(models.Model):
         constraints = [models.UniqueConstraint(fields=["owner", "course"], name="unique_assistant_config")]
 
 
+class CourseAssistantConfig(models.Model):
+    course = models.OneToOneField(Course, on_delete=models.CASCADE)
+    app_id = models.CharField(max_length=60, default="general")
+    template = models.TextField(blank=True)
+    skill_ids = models.JSONField(default=list)
+    mcp_refs = models.JSONField(default=list)
+    use_knowledge = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=0)
+    edited_by = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class MCPServer(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.SlugField(max_length=60)

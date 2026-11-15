@@ -10,7 +10,7 @@ from django.test import override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.models import AgentArtifact, AgentThread, AssistantConfig, Course, Membership, User
+from core.models import AgentArtifact, AgentThread, CourseAssistantConfig, Course, Membership, User
 
 
 CASES = [
@@ -35,13 +35,14 @@ class Command(BaseCommand):
                                         display_name='Synthetic teaching check', can_create_course=True)
         course = Course.objects.create(name='Synthetic teaching evaluation', created_by=user)
         Membership.objects.create(user=user, course=course, role='teacher')
-        config = AssistantConfig.objects.create(owner=user, course=course)
+        config = CourseAssistantConfig.objects.create(edited_by=user, course=course)
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(RefreshToken.for_user(user).access_token))
         report = {'provider': os.getenv('MODEL_PROVIDER'), 'synthetic_material_only': True, 'cases': []}
         try:
             for skill_id, app_id, prompt in CASES:
                 config.app_id, config.skill_ids = app_id, [skill_id]
+                config.revision += 1
                 config.save()
                 thread = AgentThread.objects.create(owner=user, course=course)
                 with override_settings(ALLOWED_HOSTS=['testserver']):

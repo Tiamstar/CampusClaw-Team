@@ -7,7 +7,7 @@ import { api } from '../src/api'
 vi.mock('../src/api', () => ({ api: vi.fn() }))
 afterEach(() => vi.resetAllMocks())
 
-function setup(failSave = false) {
+function setup(failSave = false, canEdit = true) {
   const saved: any[] = []
   vi.mocked(api).mockImplementation(async (path, method, data) => {
     if (path === 'agent/catalog/') return {
@@ -23,14 +23,14 @@ function setup(failSave = false) {
         if (failSave) throw new Error('保存失败')
         return data as any
       }
-      return { app_id: 'general', template: '', skill_ids: ['upload-1'], mcp_refs: [], use_knowledge: true } as any
+      return { app_id: 'general', template: '', skill_ids: ['lesson-plan-builder'], mcp_refs: [], use_knowledge: true, can_edit: canEdit, revision: 3 } as any
     }
     return [] as any
   })
   return saved
 }
 
-it('binds recommended teaching skills while retaining uploaded skills and knowledge preference', async () => {
+it('binds recommended teaching skills without publishing private uploads', async () => {
   const saved = setup()
   const wrapper = mount(AssistantStudio, { props: { courseId: 1, threadId: null } })
   await flushPromises()
@@ -38,7 +38,7 @@ it('binds recommended teaching skills while retaining uploaded skills and knowle
   await wrapper.get('.studio-nav button').trigger('click')
   await wrapper.get('.studio-app').trigger('click')
   await flushPromises()
-  expect(saved[0]).toMatchObject({ app_id: 'lesson', skill_ids: ['lesson-plan-builder', 'upload-1'], use_knowledge: true })
+  expect(saved[0]).toMatchObject({ app_id: 'lesson', skill_ids: ['lesson-plan-builder'], use_knowledge: true, revision: 3 })
   expect(wrapper.emitted('chat')).toEqual([['准备一节课']])
   wrapper.unmount()
 })
@@ -53,5 +53,20 @@ it('restores the previous selection when saving an application fails', async () 
   expect(wrapper.get('.studio-count strong').text()).toBe('01')
   expect(wrapper.emitted('chat')).toBeUndefined()
   expect(wrapper.get('.studio-notice').text()).toContain('保存失败')
+  wrapper.unmount()
+})
+
+it('shows shared student configuration read-only and keeps personal upload unbindable', async () => {
+  const saved = setup(false, false)
+  const wrapper = mount(AssistantStudio, { props: { courseId: 1, threadId: null } })
+  await flushPromises()
+  expect(wrapper.text()).toContain('只读，由任课教师维护')
+  expect(wrapper.findAll('.skill-add').every(button => button.attributes('disabled') !== undefined)).toBe(true)
+  const nav = wrapper.findAll('.studio-nav button')
+  await nav[2]!.trigger('click')
+  expect(wrapper.get('textarea').attributes('disabled')).toBeDefined()
+  expect(wrapper.get('select').attributes('disabled')).toBeDefined()
+  await wrapper.get('.primary').trigger('click')
+  expect(saved).toHaveLength(0)
   wrapper.unmount()
 })
