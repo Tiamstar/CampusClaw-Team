@@ -19,6 +19,7 @@
 | CampusClaw MCP 一次性确认验收（保留记录） | 课程列表 | 待确认、取消、一次性消费和私有历史 | `docs/mcp-confirmation-delivery.md` |
 | CampusClaw SQL/XSS/CSRF 安全反例（保留记录） | 课程列表 | SQL字面匹配、CSRF边界、论坛净化 | `reports/security-negative.md` |
 | CampusClaw 双学生并发联调 X01（保留记录） | 课程列表 | 教师看87.00/57.00与评分版本；学生看本人学情、图谱和计划3 | `reports/x01.md`、`reports/x01-evidence.json` |
+| CampusClaw 论坛联调 X02（保留记录） | 课程列表 | 正常帖已发布引用和公式；未覆盖帖no_evidence、注入帖failed未公开 | `reports/x02.md`、`reports/x02-evidence.json` |
 
 ## 组员执行顺序
 
