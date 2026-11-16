@@ -64,7 +64,7 @@ docker compose ps
 
 ## 检查与开发
 
-启动数据库并构建后端后，运行统一检查。它检查迁移漂移、后端回归、前端测试和生产构建，任一失败都会返回非零退出码。
+启动数据库并构建后端后，运行统一检查。它检查运维脚本安全边界、迁移漂移、后端回归、前端测试和生产构建，任一失败都会返回非零退出码。
 
 ```sh
 python scripts/check.py
@@ -72,7 +72,7 @@ python scripts/smoke.py --sandbox
 npx --yes --package=@fission-ai/openspec@1.15.0 openspec validate --all --strict --no-interactive
 ```
 
-安全检查需要 Python 环境安装 `pip-audit==2.10.1`，并将 Gitleaks 8.30.1 加入 PATH。检查覆盖 Git 历史、待提交文件、四组 Python 锁文件及前端依赖。前端高危及以上阻断，剩余中危的处置见报告。
+安全检查需要 Python 环境安装 `pip-audit==2.10.1`，并将 Gitleaks 8.30.1 加入 PATH。检查覆盖 Git 历史、待提交文件、四组 Python 锁文件及前端依赖。前端高危及以上阻断，当前全量审计及依赖覆盖维护依据见 [更新记录](reports/dependency-refresh.md)。
 
 ```sh
 python -m pip install pip-audit==2.10.1
@@ -96,6 +96,8 @@ docker compose down
 审计中 tokens 为 null 表示尚未采集模型用量。HTTP 耗时表示处理到响应头的时间，工具记录有独立执行耗时。完整 SSE 耗时及技能监控面板属于后续交付。
 
 `down` 保留数据库和文件卷。生产发布前按 [部署检查](docs/baseline-v0.1.0.md) 完成 HTTPS、域名、安全 Cookie、备份恢复、容量与公网验收。
+
+完整本地备份与隔离恢复可运行 `python scripts/rehearse_recovery.py --backup-dir ../.backups/recovery-new-run`。目标必须是仓库外的新目录；备份含私人数据，不能上传仓库。脚本不覆盖源库，在独立内部网络恢复并比较所有表、附件及引用，保留备份和停止的恢复容器。前提、实际结果与RPO/RTO限制见 [恢复演练](docs/recovery-rehearsal.md)。
 
 ## 规约与下一轮
 

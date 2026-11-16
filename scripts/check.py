@@ -41,6 +41,7 @@ def main():
             run([sys.executable, '-m', 'pip_audit', '-r', f'{component}/requirements.lock', '--no-deps', '--disable-pip'])
         run([npm, 'audit', '--registry=https://registry.npmjs.org', '--audit-level=high'], ROOT / 'frontend')
     else:
+        run([sys.executable, '-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_*.py'])
         run(['docker', 'compose', 'run', '--rm', '--no-deps', 'backend', 'python', 'manage.py', 'makemigrations', '--check', '--dry-run'])
         run(['docker', 'compose', 'run', '--rm', '--no-deps', '-e', 'MODEL_PROVIDER=mock', '-e', 'MODEL_NAME=mock-local', '-e', 'MODEL_API_KEY=', '-e', 'ANTHROPIC_API_KEY=', '-e', 'EMBEDDING_API_KEY=', '-e', 'EMBEDDING_MODEL=', 'backend', 'python', 'manage.py', 'test', 'core', '--noinput'])
         run([npm, 'ci'], ROOT / 'frontend')
