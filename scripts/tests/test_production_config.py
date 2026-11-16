@@ -16,14 +16,14 @@ class ProductionConfigTests(unittest.TestCase):
             path.write_text('existing-private-config', encoding='utf-8')
             with self.assertRaises(FileExistsError):
                 production.create_config(path, 'campus.example.com', 'ops@example.com')
-            self.assertEqual(path.read_text(), 'existing-private-config')
+            self.assertEqual(path.read_text(encoding='utf-8'), 'existing-private-config')
 
     def test_new_credentials_never_reuse_local_values(self):
         with tempfile.TemporaryDirectory() as folder:
             paths = [Path(folder) / f'.env.production-{i}' for i in range(2)]
             for path in paths:
                 production.create_config(path, 'campus.example.com', 'ops@example.com')
-            configs = [dict(line.split('=', 1) for line in p.read_text().splitlines() if line and not line.startswith('#')) for p in paths]
+            configs = [dict(line.split('=', 1) for line in p.read_text(encoding='utf-8').splitlines() if line and not line.startswith('#')) for p in paths]
             for key in ['DJANGO_SECRET_KEY', 'POSTGRES_PASSWORD', 'MCP_CAMPUS_TOKEN', 'SANDBOX_TOKEN']:
                 self.assertGreaterEqual(len(configs[0][key]), 50)
                 self.assertNotEqual(configs[0][key], configs[1][key])

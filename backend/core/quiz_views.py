@@ -1,5 +1,6 @@
 import re
 import asyncio
+import hashlib
 from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
@@ -14,10 +15,11 @@ from rest_framework.response import Response
 from .forum_views import api_view,access,text,page
 from .views import fail
 from .assignment_views import score_value
-from .models import (Question,Quiz,QuizAttempt,QuizSaveReceipt,QuizAnswerImage,QuizSuggestion,KnowledgePoint)
+from .models import (Question,Quiz,QuizAttempt,QuizSaveReceipt,QuizAnswerImage,QuizSuggestion,KnowledgePoint,QuestionImportBatch,Course)
 from .quiz_service import (KINDS,question_snapshot,paper,fingerprint,validate_answers,finalize,record_grade,
                            attempt_data,quiz_statistics)
 from .audit import record_audit
+from .question_import import parse_file, template_bytes
 
 
 def audit(request,course_id,action,obj):
@@ -64,6 +66,88 @@ def questions(request,course_id):
     with transaction.atomic():
         q=Question.objects.create(course_id=course_id,**values);q.points.set(points);audit(request,course_id,'question.create',q.id)
     return Response(question_snapshot(q),status=201)
+
+
+def prepare_question_import(request, course_id):
+    upload=request.FILES.get('file')
+    if upload is None:return None,fail('请选择题库文件')
+    from .question_import import MAX_FILE
+    if upload.size>MAX_FILE:return None,fail('文件不能超过5 MiB')
+    raw=upload.read(MAX_FILE+1)
+    try:rows=parse_file(upload.name,raw)
+    except ValueError as exc:return None,fail(str(exc))
+    digest=hashlib.sha256(raw).hexdigest()
+    names={p.name:p for p in KnowledgePoint.objects.filter(course_id=course_id,active=True)}
+    prepared=[];errors=[]
+    for row in rows:
+        values={k:v for k,v in row.items() if k not in {'row','point_names'}}
+        try:
+            point_names=row['point_names']
+            if len(set(point_names))!=len(point_names):raise ValueError('知识点名称重复')
+            missing=[name for name in point_names if name not in names]
+            if missing:raise ValueError('知识点不存在或未启用：'+'、'.join(missing[:5]))
+            values['point_ids']=[names[name].id for name in point_names]
+            validated,points=validate_question(values,course_id)
+            prepared.append({'row':row['row'],'values':validated,'points':points})
+        except (ValueError,TypeError) as exc:
+            errors.append({'row':row['row'],'message':str(exc)})
+    return {'rows':prepared,'errors':errors,'digest':digest,'filename':upload.name},None
+
+
+@api_view(['POST'])
+def question_import_preview(request,course_id):
+    access(request.user,course_id,True)
+    result,error=prepare_question_import(request,course_id)
+    if error:return error
+    return Response({'filename':result['filename'],'total':len(result['rows'])+len(result['errors']),
+        'valid_count':len(result['rows']),'errors':result['errors'],
+        'questions':[{'row':item['row'],'kind':item['values']['kind'],'body':item['values']['body'],
+            'options':item['values']['options'],'answer':item['values']['answer'],'score':str(item['values']['score']),
+            'explanation':item['values']['explanation'],'points':[p.name for p in KnowledgePoint.objects.filter(id__in=item['points']).order_by('id')]}
+            for item in result['rows']],
+        'can_import':not result['errors'] and bool(result['rows'])})
+
+
+@api_view(['POST'])
+def question_import_commit(request,course_id):
+    access(request.user,course_id,True)
+    key=request.data.get('request_key')
+    if not isinstance(key,str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,64}',key):return fail('导入标识无效，请重新预览')
+    upload=request.FILES.get('file')
+    from .question_import import MAX_FILE
+    if upload is None:return fail('请选择题库文件')
+    if upload.size>MAX_FILE:return fail('文件不能超过5 MiB')
+    digest=hashlib.sha256(upload.read(MAX_FILE+1)).hexdigest()
+    upload.seek(0)
+    with transaction.atomic():
+        Course.objects.select_for_update().get(pk=course_id)
+        access(request.user,course_id,True)
+        old=QuestionImportBatch.objects.filter(course_id=course_id,actor=request.user,key=key).first()
+        if old:
+            if old.fingerprint!=digest:return fail('导入标识已用于其他文件，请重新预览',409)
+            return Response({'imported_count':old.imported_count,'question_ids':old.question_ids,'replayed':True})
+        result,error=prepare_question_import(request,course_id)
+        if error:return error
+        if result['errors'] or not result['rows']:return fail('导入前校验失败；题库未写入',422)
+        ids=[]
+        for item in result['rows']:
+            question=Question.objects.create(course_id=course_id,**item['values'])
+            question.points.set(item['points'])
+            ids.append(question.id)
+        QuestionImportBatch.objects.create(course_id=course_id,actor=request.user,key=key,
+            fingerprint=result['digest'],imported_count=len(ids),question_ids=ids)
+        audit(request,course_id,'question.import',len(ids))
+    return Response({'imported_count':len(ids),'question_ids':ids,'replayed':False},status=201)
+
+
+@api_view(['GET'])
+def question_import_template(request,file_format):
+    if file_format not in {'xlsx','docx'}:return fail('模板格式无效',404)
+    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if file_format=='xlsx' else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    response=FileResponse(BytesIO(template_bytes(file_format)),content_type=content_type,
+        as_attachment=True,filename=f'CampusClaw-question-bank-template.{file_format}')
+    response['Cache-Control']='private, no-store'
+    return response
 
 
 @api_view(['PUT'])

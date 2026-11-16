@@ -93,3 +93,16 @@ class QuizSuggestion(models.Model):
     body = models.TextField(blank=True)
     model = models.CharField(max_length=200,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class QuestionImportBatch(models.Model):
+    course = models.ForeignKey('core.Course', on_delete=models.CASCADE)
+    actor = models.ForeignKey('core.User', on_delete=models.PROTECT)
+    key = models.CharField(max_length=64)
+    fingerprint = models.CharField(max_length=64)
+    imported_count = models.PositiveIntegerField()
+    question_ids = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['course', 'actor', 'key'], name='unique_question_import_key')]

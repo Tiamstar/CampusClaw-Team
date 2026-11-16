@@ -5,7 +5,7 @@ from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from pgvector.django import VectorField
-from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion
+from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion, QuestionImportBatch
 
 
 class AuthRateLimit(models.Model):
