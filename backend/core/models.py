@@ -15,6 +15,14 @@ class AuthRateLimit(models.Model):
     expires_at = models.DateTimeField(db_index=True)
 
 
+class AcceptanceFixtureSet(models.Model):
+    """Import receipt only; reruns never reset members' acceptance work."""
+    key = models.CharField(max_length=64, primary_key=True)
+    version = models.PositiveIntegerField()
+    manifest = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class KnowledgePoint(models.Model):
     course = models.ForeignKey('Course', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)

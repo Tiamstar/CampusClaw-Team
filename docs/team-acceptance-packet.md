@@ -1,6 +1,6 @@
 # 小组交叉验收包
 
-版本：`codex/baseline-v0.1.0`，当前提交：`a4160b1`。这是一份给另一名组员执行的验收入口，不把 Codex 自测当作独立验收。
+版本：`codex/baseline-v0.1.0`。验收时先记录`git rev-parse HEAD`的完整提交号，并由交叉双方使用同一提交。这是一份给另一名组员执行的验收入口，不把 Codex 自测当作独立验收。
 
 ## 环境
 
@@ -27,7 +27,8 @@
 2. 用学生账号登录同一课程，打开成员列表，确认只能看到姓名和角色，不能看到邮箱；打开答疑论坛和已有课程内容，确认学生仍可执行正常学习流程。
 3. 在异步索引验收课程打开“教学技能”，选择 6 小时，核对接口完整耗时、模型耗时、任务总耗时、处理和排队曲线。不要把单样本当成容量或SLO结论。
 4. 在 MCP 验收课程打开待确认卡片，核对完整参数只对线程所有者可见；教师账号可取消，学生账号只能确认自己的卡片；不要重复提交确认。
-5. 用同一提交在干净数据库执行 `python scripts/check.py`、`python scripts/check.py --security` 和 `npx --yes @fission-ai/openspec validate --all --strict`。记录完整命令、退出码和环境，而不是只复制摘要。
+5. 用同一提交在独立空数据库按 [夹具说明](acceptance-fixtures.md) 执行`seed_acceptance --allow-synthetic-fixtures`，安全输入新合成账号密码；再次运行核对`reused: true`，再自行登录复算87.00/57.00和八人统计。上述两个真实账号保留在原库，不把其密码和数据复制到新环境。
+6. 在独立环境执行 `python scripts/check.py`、`python scripts/check.py --security` 和 `npx --yes @fission-ai/openspec validate --all --strict`。记录完整命令、退出码和环境，而不是只复制摘要。
 
 窄屏本地复验已完成：390×844视口下课程、教学技能和论坛无横向溢出；证据为仓库外 `.latency-mobile-final.jpg`。组员仍应在自己的手机或浏览器复验，不能把本地模拟视口当成真实设备覆盖。
 
