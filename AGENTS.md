@@ -18,6 +18,8 @@ MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期
 
 固定 SQL/XSS/CSRF 反例、真实 HTTP 与浏览器渲染证据见 apitest/README.md、reports/security-negative.md 和 reports/security-negative-evidence.json；存储原文不替代实际页面渲染结论。
 
+组员交叉验收按 docs/team-acceptance-packet.md 执行；未填写的独立验收、真实反馈、公网、容量和主干保护项目不得标记为已完成。
+
 ## 每次修改
 
 - 先读关联规约，记录 Requirement 与受影响的正常、失败、边界路径。行为变化同步文档。
