@@ -1,0 +1,38 @@
+# MVP 完成审计
+
+审计时间：2026-11-16。依据 [项目章程](../docs/project-charter.md) 的 MVP 定义、[验收计划](../docs/acceptance-plan.md) 和当前提交 `48b42b5`。执行者为 Codex；本表不是组员独立验收，也不是公网部署结论。
+
+## 判定规则
+
+章程要求课程底座 + E1、E3、E4、E5 同时满足：规约评审、干净环境部署、主路径/权限负例/失败恢复/数据一致性、非主实现者用同一提交交叉验收、公网地址和脱敏可追溯证据。自动测试通过只能证明对应的自动化范围，不能替代后两项。
+
+| 范围 | 当前判定 | 已有证据 | 仍缺的完成条件 |
+| --- | --- | --- | --- |
+| 课程底座 FND-001/002/003 | 本地可用 | `docs/baseline-v0.1.0.md`、`docs/material-index-delivery.md`、`docs/course-assistant-delivery.md`；权限、索引持久化、配置只读和真实账号记录 | 另一成员在干净环境复现，公网主路径 |
+| E1 / QZ-001–007 | 本地实现与自测 | `docs/quiz-delivery.md`、测验专项后端/前端用例、真实学生答卷与待复核记录 | E1 主责之外的成员按 AC-Q01–Q07 独立验收；X01 联调 |
+| E3 / FRM-001–004 | 本地实现与安全验证 | `docs/forum-delivery.md`、安全反例课程12、真实论坛帖子/草稿/待办、浏览器脚本净化证据 | E3 主责之外的成员按 AC-FR01–FR04 独立验收；X02 联调 |
+| E4 / GRD-001–005 | 分阶段本地实现 | `docs/gradebook-delivery.md`、`docs/learning-mcp-delivery.md`、`docs/diagnostic-delivery.md`、`docs/coursework-ai-delivery.md`；成绩5.00/revision4、快照89.60和报告均保留 | 统一成绩→学情→诊断→图谱链路的独立回查；E4 交叉验收和 X01 |
+| E5 / KNO-001–004 | 本地实现与自测 | `docs/graph-delivery.md`、`docs/review-path-delivery.md`；候选/批准图谱、未知节点、计划 #2 与9条提醒保留 | E5 主责之外的成员按 AC-K01–K04 独立验收；X01 |
+| 安全 SEC-001–003 | 本地证据充分 | `reports/security-negative.md`、`reports/security-negative-evidence.json`；SQL/XSS/CSRF 18项真实HTTP检查、浏览器DOM和成员邮箱权限验证 | 其他成员复验；不宣称完整渗透测试 |
+| AI-005/006 | 本地可用与真实账号证据 | `docs/mcp-confirmation-delivery.md`、`docs/latency-monitor-delivery.md`；课程11/7数据和窄屏验收保留 | 成员独立复核；容量/SLO、外部通知、公网未完成 |
+| DLV-001 | 未完成 | Compose、迁移、健康检查和本机启动记录 | 空库由非主实现者复现；公网HTTPS三条主路径 |
+| DLV-002 | 部分完成 | `reports/bench.md`、各迁移恢复记录、固定SQL/XSS/CSRF证据 | 团队冻结容量/RPO/RTO阈值；独立性能与恢复验收 |
+
+## 联调结论
+
+当前已有多个真实账号课程和跨模块数据，但不能把“各模块分别通过”写成 X01/X02 已通过。X01 要从同一答卷/评分版本回查测验、成绩册、掌握度、图谱和复习提醒；X02 要从学生提问回查相似帖、来源草稿、教师确认发布、待办关闭以及提示注入负例。现有报告分别记录了这些模块，尚缺同一轮、非主实现者的端到端签字。
+
+## 当前可复现门槛
+
+在当前工作树执行过的最终本地门槛包括：统一检查 191 项后端、前端测试和生产构建退出 0；安全检查退出 0；7 个 OpenSpec 变更严格校验通过。最后一次安全反例运行实际保留课程12和帖子；学生成员查询不返回邮箱。具体命令和账号约束见 [小组交叉验收包](../docs/team-acceptance-packet.md)。
+
+## 不得提前标记的项目
+
+GitHub CI 仍受仓库所属账号账单锁定影响，主干保护未由管理员配置；没有公网地址、团队冻结容量/RPO/RTO、三名真实使用者反馈或组员独立签字。`docs/team-workflow.md` 的用户未提交修改不属于本审计提交。以上项目保持待办，不通过删除测试或复用 Codex 自测结果改变结论。
+
+## 下一步出口
+
+1. 由李非凡、陈志康按交叉责任表各自验收对方功能，并在 `docs/team-acceptance-packet.md` 填写提交号、环境、时间和结果。
+2. 共同冻结性能、恢复和公网配置，再执行 AC-D01、AC-D02。
+3. 完成 X01/X02 同一课程的端到端回查，保留旧失败记录和修复后的新证据。
+4. 只有上述记录齐全后，才能在章程中将 MVP 标记为通过。
