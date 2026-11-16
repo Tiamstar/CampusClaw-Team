@@ -27,6 +27,8 @@
 4. 在 MCP 验收课程打开待确认卡片，核对完整参数只对线程所有者可见；教师账号可取消，学生账号只能确认自己的卡片；不要重复提交确认。
 5. 用同一提交在干净数据库执行 `python scripts/check.py`、`python scripts/check.py --security` 和 `npx --yes @fission-ai/openspec validate --all --strict`。记录完整命令、退出码和环境，而不是只复制摘要。
 
+窄屏本地复验已完成：390×844视口下课程、教学技能和论坛无横向溢出；证据为仓库外 `.latency-mobile-final.jpg`。组员仍应在自己的手机或浏览器复验，不能把本地模拟视口当成真实设备覆盖。
+
 ## 记录表
 
 | Requirement / 路径 | 主实现者 | 独立验收人 | 结果（通过/不通过/阻塞） | 时间 | 证据或问题单 |
