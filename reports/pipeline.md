@@ -15,3 +15,5 @@ push 运行 `41791073786` 与 PR 运行 `41791217616` 均在开始执行步骤�
 [GitHub Actions 工作流记录](https://github.com/Tiamstar/CampusClaw-Team/actions/workflows/baseline.yml)
 
 检查时 main 的 protected 为 false，当前账号具有 push 权限而无 admin 权限。仓库管理员需将检查配置为主干必需状态，团队成员完成交叉评审后再合入。
+
+2026-11-16只读复查：最近旧运行41993300903（6c2603639e7b4447304e7b9c67a7a70b4536b1b6）仍在步骤开始前收到账号账单锁定注释；main protected=false，当前权限admin=false。未触发新运行，不能以旧运行代替当前提交CI。生产HTTPS本机预演另见 [审核](https-deployment.md)，不改变远端阻塞结论。

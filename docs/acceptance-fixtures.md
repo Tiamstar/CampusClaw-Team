@@ -4,20 +4,23 @@
 
 ## 执行
 
-先在独立工作目录按 README 生成自己的配置、构建并启动。不要复制开发者数据库、上传卷或模型凭据。确认新环境无任何账号与课程，之后执行：
+先在独立工作目录按 README 生成自己的配置并构建，仅启动数据库。不要复制开发者数据库、上传卷或模型凭据。**须在完整应用首次启动前导入**：正常启动的bootstrap_tools会创建平台服务账号，届时不再是空库，命令会安全拒绝。确认新环境无任何账号与课程，之后执行：
 
 ```powershell
-docker compose exec -T backend python manage.py migrate
+docker compose up -d --wait db
+docker compose build backend
+docker compose run --rm --no-deps backend python manage.py migrate
 # 从安全输入读取合成账号密码，不写入命令行、仓库或终端输出。
 $fixtureSecret = Read-Host '独立验收账号密码' -AsSecureString
 $env:ACCEPTANCE_FIXTURE_PASSWORD = [System.Net.NetworkCredential]::new('', $fixtureSecret).Password
 try {
-    docker compose exec -T -e ACCEPTANCE_FIXTURE_PASSWORD backend python manage.py seed_acceptance --allow-synthetic-fixtures
+    docker compose run --rm --no-deps -T -e ACCEPTANCE_FIXTURE_PASSWORD backend python manage.py seed_acceptance --allow-synthetic-fixtures
 } finally {
     Remove-Item Env:ACCEPTANCE_FIXTURE_PASSWORD -ErrorAction SilentlyContinue
     $fixtureSecret.Dispose()
 }
 # 重复执行不再需要密码；只返回最初清单，不写业务表。
+docker compose up --build -d --wait --wait-timeout 180
 docker compose exec -T backend python manage.py seed_acceptance --allow-synthetic-fixtures
 ```
 

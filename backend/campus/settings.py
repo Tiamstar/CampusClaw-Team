@@ -82,6 +82,12 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "0") == "1"
 SESSION_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "0") == "1"
+# Only enable behind the bundled HTTPS edge, with the backend port private.
+# That edge replaces both forwarded protocol and client-IP headers.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if os.getenv("DJANGO_TRUST_PROXY_TLS", "0") == "1" else None
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_HTTPS_ONLY", "0") == "1"
+SECURE_REDIRECT_EXEMPT = [r"^health/(?:live/)?$"]
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "0"))
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

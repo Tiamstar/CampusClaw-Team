@@ -49,3 +49,5 @@ MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期
 新草稿固定失败分类、隐私回归及旧失败兼容见 reports/forum-diagnostics.md；禁止在提示/审计写异常原文、失败模型输出或服务凭据，分类不能反推旧错误或证明语义抗注入。
 
 独立空库合成夹具命令seed_acceptance见 docs/acceptance-fixtures.md；不得在现有真实教学库导入、覆盖或重置。重复导入只读原回执，保留验收人的操作；人工预索引/候选不当作模型或worker验证。密码只经环境安全输入。
+
+生产HTTPS覆盖与内部CA预演见 docs/production-deployment.md、reports/https-deployment.md；可信代理头只在backend不发布的拓扑启用。预演必须新项目/新卷、合成数据，无宿主端口，不迁移或公开既有教学库；内部CA通过不能写成公网受信证书交付。夹具须在bootstrap_tools首次创建服务账号之前导入。

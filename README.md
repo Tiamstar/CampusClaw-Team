@@ -95,7 +95,7 @@ docker compose down
 
 审计中 tokens 为 null 表示尚未采集模型用量。HTTP 耗时表示处理到响应头的时间，工具记录有独立执行耗时。完整 SSE 耗时及技能监控面板属于后续交付。
 
-`down` 保留数据库和文件卷。生产发布前按 [部署检查](docs/baseline-v0.1.0.md) 完成 HTTPS、域名、安全 Cookie、备份恢复、容量与公网验收。
+`down` 保留数据库和文件卷。独立HTTPS配置、生产端口隔离和可执行内部CA预演见 [生产部署说明](docs/production-deployment.md)；实际18项本地结果见 [审核](reports/https-deployment.md)。生产发布前仍需完成域名/服务器、公网受信证书、备份恢复、容量与独立验收；本机预演不代表公网交付。
 
 完整本地备份与隔离恢复可运行 `python scripts/rehearse_recovery.py --backup-dir ../.backups/recovery-new-run`。目标必须是仓库外的新目录；备份含私人数据，不能上传仓库。脚本不覆盖源库，在独立内部网络恢复并比较所有表、附件及引用，保留备份和停止的恢复容器。前提、实际结果与RPO/RTO限制见 [恢复演练](docs/recovery-rehearsal.md)。
 

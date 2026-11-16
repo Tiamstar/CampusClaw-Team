@@ -1,0 +1,16 @@
+encode zstd gzip
+header Strict-Transport-Security "max-age=86400"
+request_body {
+    max_size 52MB
+}
+@backend path /api/* /admin/* /static/* /health/*
+handle @backend {
+    reverse_proxy backend:8000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto https
+        flush_interval -1
+    }
+}
+handle {
+    reverse_proxy frontend:80
+}
