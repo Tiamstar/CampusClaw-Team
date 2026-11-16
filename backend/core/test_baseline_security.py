@@ -3,12 +3,12 @@ from asgiref.sync import async_to_sync
 from unittest.mock import patch
 
 from django.db import OperationalError
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .agent_runtime import ToolContext, builtin_tool_registry
-from .models import AgentThread, AuditEvent, Course, Membership, User
+from .models import AgentThread, AuditEvent, Course, ForumPost, Membership, User
 
 
 class RequestBoundaryTests(TestCase):
@@ -48,6 +48,42 @@ class RequestBoundaryTests(TestCase):
         client = APIClient(enforce_csrf_checks=True)
         response = client.post('/admin/login/', {'username': 'admin', 'password': 'invalid'})
         self.assertEqual(response.status_code, 403)
+
+    def test_nonempty_forum_sql_queries_match_only_literal_values(self):
+        path = f'/api/courses/{self.course.pk}/forum/posts/'
+        normal = ForumPost.objects.create(course=self.course, author=self.teacher, title='ordinary-canary', body='normal')
+        self.assertEqual([r['id'] for r in self.client.get(path, {'q':'ordinary-canary'}).json()['items']], [normal.pk])
+        other = Course.objects.create(name='Other', created_by=self.teacher)
+        for payload in ["' OR 1=1 --", "'; SELECT pg_sleep(1); --", "' UNION SELECT NULL --", '%_']:
+            with self.subTest(payload=payload):
+                self.assertEqual(self.client.get(path, {'q':payload}).json()['items'], [])
+                literal = ForumPost.objects.create(course=self.course, author=self.teacher, title=payload, body='literal')
+                ForumPost.objects.create(course=other, author=self.teacher, title=payload, body='private')
+                result = self.client.get(path, {'q':payload})
+                self.assertEqual(result.status_code, 200)
+                self.assertEqual([r['id'] for r in result.json()['items']], [literal.pk])
+
+    @override_settings(STORAGES={'default':{'BACKEND':'django.core.files.storage.FileSystemStorage'},
+                               'staticfiles':{'BACKEND':'django.contrib.staticfiles.storage.StaticFilesStorage'}})
+    def test_admin_csrf_valid_invalid_and_foreign_origin_controls(self):
+        client = APIClient(enforce_csrf_checks=True)
+        client.get('/admin/login/')
+        token = client.cookies['csrftoken'].value
+        form = {'username':'nonexistent', 'password':'invalid', 'csrfmiddlewaretoken':token}
+        self.assertEqual(client.post('/admin/login/', form, HTTP_ORIGIN='https://foreign.example.invalid').status_code, 403)
+        self.assertEqual(client.post('/admin/login/', {**form, 'csrfmiddlewaretoken':'invalid'}).status_code, 403)
+        valid = client.post('/admin/login/', form, HTTP_ORIGIN='http://testserver')
+        self.assertEqual(valid.status_code, 200)
+        self.assertContains(valid, 'errornote')
+
+    def test_cookie_jwt_cannot_authorize_api_writes(self):
+        path = f'/api/courses/{self.course.pk}/forum/posts/'
+        client = APIClient(enforce_csrf_checks=True)
+        client.cookies['access_token'] = str(RefreshToken.for_user(self.teacher).access_token)
+        body = {'title':'cookie must not authorize', 'body':'canary'}
+        self.assertEqual(client.post(path, body, format='json').status_code, 401)
+        self.assertFalse(ForumPost.objects.exists())
+        self.assertEqual(self.client.post(path, body, format='json').status_code, 201)
 
     def test_denial_audit_has_actor_request_id_and_no_body(self):
         Membership.objects.filter(user=self.teacher, course=self.course).update(role='student')

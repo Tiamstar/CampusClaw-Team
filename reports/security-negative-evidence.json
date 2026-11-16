@@ -1,0 +1,120 @@
+{
+  "started_at": "2026-11-16T00:12:03.530368+00:00",
+  "fixtures_retained": true,
+  "transport": "actual_loopback_http",
+  "auth": "server-minted JWT for existing authorized users; not a password-login test",
+  "checks": [
+    {
+      "id": "SQL-positive-control",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "SQL-01-empty",
+      "passed": true,
+      "status": 200,
+      "request_id": "a62fcc2bb7f344c3ba123fb225371399"
+    },
+    {
+      "id": "SQL-01-literal",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "SQL-02-empty",
+      "passed": true,
+      "status": 200,
+      "request_id": "95fc2bcc0db140dfaf910cbdaf7dd366"
+    },
+    {
+      "id": "SQL-02-literal",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "SQL-03-empty",
+      "passed": true,
+      "status": 200,
+      "request_id": "d8684440d95642f496aa0eee04c1988c"
+    },
+    {
+      "id": "SQL-03-literal",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "SQL-04-empty",
+      "passed": true,
+      "status": 200,
+      "request_id": "79b45a75f56e4239bcdefd73774d9131"
+    },
+    {
+      "id": "SQL-04-literal",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "XSS-stored-control",
+      "passed": true,
+      "post_id": 9
+    },
+    {
+      "id": "CSRF-01-admin-missing",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "id": "CSRF-02-admin-invalid",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "id": "CSRF-03-admin-foreign-origin",
+      "passed": true,
+      "status": 403
+    },
+    {
+      "id": "CSRF-04-admin-valid-control",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "id": "CSRF-05-api-anonymous",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "id": "CSRF-06-api-cookie-token",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "id": "CSRF-07-api-explicit-bearer",
+      "passed": true,
+      "status": 201
+    },
+    {
+      "id": "formal-grades-unchanged",
+      "passed": true,
+      "versions_checked": 1308
+    }
+  ],
+  "browser_xss": {
+    "role": "teacher",
+    "course_id": 12,
+    "post_id": 9,
+    "dangerous_executable_nodes": 0,
+    "body_probe_attribute": null,
+    "katex_nodes": 2,
+    "inline_code_preserved": true,
+    "observed": true,
+    "screenshot": "outside repository: .security-negative-forum.jpg",
+    "scope": "Stored forum content rendered in actual browser; no claim of exhaustive XSS coverage"
+  },
+  "course_id": 12,
+  "join_code": "VUWD87YB",
+  "xss_post_id": 9,
+  "finished_at": "2026-11-16T00:12:04.284960+00:00",
+  "http_checks_passed": true,
+  "course_exists": true
+}

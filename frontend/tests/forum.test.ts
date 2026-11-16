@@ -3,6 +3,7 @@ import { describe,it,expect,vi,beforeEach } from 'vitest'
 import { mount,flushPromises } from '@vue/test-utils'
 import ForumWorkspace from '../src/ForumWorkspace.vue'
 import { api } from '../src/api'
+import securityCases from '../../apitest/cases/security-negative.json'
 vi.mock('../src/api',()=>({api:vi.fn(),openProtected:vi.fn()}))
 const question={id:1,title:'积分问题',body:String.raw`如何计算 $\frac{1}{2}$？ <img src=x onerror=alert(1)>`,author:{name:'匿名同学'},anonymous:true,points:[],mentions:[],pinned:false,featured:false,reply_count:0,created_at:'2026-11-15T12:00:00Z'}
 beforeEach(()=>{
@@ -19,6 +20,18 @@ beforeEach(()=>{
   })
 })
 describe('course forum',()=>{
+  it('renders the retained XSS corpus safely while preserving formulas and code',async()=>{
+    const previous=question.body
+    question.body=securityCases.xss.body
+    const w=mount(ForumWorkspace,{props:{courseId:1,isTeacher:false}})
+    try {
+      await flushPromises();await w.get('.forum-post').trigger('click');await flushPromises()
+      expect(w.find('script,iframe,svg[onload],[onerror],a[href^="javascript:"]').exists()).toBe(false)
+      expect(w.find('.katex').exists()).toBe(true)
+      expect(w.find('code').text()).toContain('<script>这段代码应当按原文显示</script>')
+      expect(w.text()).toContain('SECURITY-NEGATIVE-XSS')
+    } finally {question.body=previous;w.unmount()}
+  })
   it('student view renders safe formulas and never requests private drafts',async()=>{
     const w=mount(ForumWorkspace,{props:{courseId:1,isTeacher:false}});await flushPromises()
     await w.get('.forum-post').trigger('click');await flushPromises()
