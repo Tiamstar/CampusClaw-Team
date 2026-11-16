@@ -66,6 +66,9 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-}
       EMBEDDING_DIM: ${EMBEDDING_DIM:-}
+      SKILL_ALERT_FOR_SECONDS: ${SKILL_ALERT_FOR_SECONDS:-120}
+      SKILL_ALERT_RECOVERY_SECONDS: ${SKILL_ALERT_RECOVERY_SECONDS:-120}
+      SKILL_ALERT_MAX_GAP_SECONDS: ${SKILL_ALERT_MAX_GAP_SECONDS:-90}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=2)"]
       interval: 5s

@@ -49,6 +49,9 @@ class SkillAlert(models.Model):
     sample_size = models.PositiveIntegerField(default=0)
     changed_at = models.DateTimeField()
     evaluated_at = models.DateTimeField()
+    pending_since = models.DateTimeField(null=True)
+    observation = models.CharField(max_length=16, default='unknown')
+    policy_key = models.CharField(max_length=160, blank=True)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['course', 'skill_id', 'rule'], name='unique_skill_alert')]

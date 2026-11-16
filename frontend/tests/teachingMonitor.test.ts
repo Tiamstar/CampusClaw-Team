@@ -6,7 +6,7 @@ import { api } from '../src/api'
 vi.mock('../src/api',()=>({api:vi.fn()}))
 const config={guidance_enabled:true,grading_enabled:true,explanation_enabled:true,revision:0}
 const task={id:6,question:'How to integrate?',status:'succeeded',revision:1,current:true,skill_id:'problem-guidance@1.0.0',settings_revision:0,error:'',result:{explanation:'Try $x^2$. <img src=x onerror=alert(1)>',citations:[{material_id:1,chunk_id:2,title:'Book',excerpt:'integral'}]}}
-function responses(teacher=false,rows:any[]=[]){vi.mocked(api).mockImplementation(async path=>path.includes('settings')?{...config}:path.includes('skill-monitor')?{monitor_stale:true,monitor_evaluated_at:null,usage_note:'Unreported is unknown',curve_interval:'minute_sample',skills:[{kind:'guidance',skill_id:'problem-guidance@1.0.0',calls:0,usage_coverage:null,input_tokens:null,output_tokens:null,total_tokens:null,p95_ms:null,failure_rate:null,oldest_queue_seconds:0}],queue_curve:[],alerts:[],events:[]}:rows as any);return mount(TeachingWorkspace,{props:{courseId:7,isTeacher:teacher}})}
+function responses(teacher=false,rows:any[]=[],alerts:any[]=[]){vi.mocked(api).mockImplementation(async path=>path.includes('settings')?{...config}:path.includes('skill-monitor')?{monitor_stale:true,monitor_evaluated_at:null,usage_note:'Unreported is unknown',curve_interval:'minute_sample',skills:[{kind:'guidance',skill_id:'problem-guidance@1.0.0',calls:0,usage_coverage:null,input_tokens:null,output_tokens:null,total_tokens:null,p95_ms:null,failure_rate:null,oldest_queue_seconds:0}],queue_curve:[],alerts,alert_policy:{for_seconds:120,recovery_seconds:120,max_gap_seconds:90},events:[]}:rows as any);return mount(TeachingWorkspace,{props:{courseId:7,isTeacher:teacher}})}
 afterEach(()=>{vi.resetAllMocks();vi.useRealTimers()})
 it('student requests private guide; renders sanitized math and real references without monitoring',async()=>{
  const v=responses(false,[task]);await flushPromises();expect(v.find('.katex').exists()).toBe(true);expect(v.find('img[onerror]').exists()).toBe(false);expect(v.text()).toContain('[m1:c2]');expect(v.text()).not.toContain('运行监控');expect(vi.mocked(api).mock.calls.every(c=>!c[0].includes('monitor'))).toBe(true)
@@ -29,4 +29,14 @@ it('background refresh preserves unsaved teacher switches',async()=>{
 
 it('explicit refresh discards stale settings draft so configuration conflicts can recover',async()=>{
  const v=responses(true);await flushPromises();await v.find('input[type=checkbox]').setValue(false);await v.findAll('button').find(b=>b.text()==='刷新记录')!.trigger('click');await flushPromises();expect((v.find('input[type=checkbox]').element as HTMLInputElement).checked).toBe(true);v.unmount()
+})
+
+it('distinguishes pending trigger, pending recovery and insufficient samples',async()=>{
+ const base={skill_id:'problem-guidance@1.0.0',rule:'model_p95_ms',value:19000,threshold:15000,sample_size:5}
+ const v=responses(true,[],[
+  {...base,id:1,firing:false,pending_since:'2026-11-16T00:00:00Z',observation:'breaching',has_fired:false},
+  {...base,id:2,firing:true,pending_since:'2026-11-16T00:00:00Z',observation:'normal',has_fired:true},
+  {...base,id:3,firing:true,pending_since:null,observation:'unknown',has_fired:true},
+ ])
+ await flushPromises();expect(v.text()).toContain('持续异常观察中');expect(v.text()).toContain('恢复观察中（告警保持）');expect(v.text()).toContain('样本不足（告警保持）');expect(v.text()).toContain('连续异常 120 秒触发');expect(v.text()).not.toContain('已恢复');v.unmount()
 })

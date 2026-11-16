@@ -88,6 +88,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if os.getenv("DJAN
 SECURE_SSL_REDIRECT = os.getenv("DJANGO_HTTPS_ONLY", "0") == "1"
 SECURE_REDIRECT_EXEMPT = [r"^health/(?:live/)?$"]
 SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "0"))
+SKILL_ALERT_FOR_SECONDS = int(os.getenv('SKILL_ALERT_FOR_SECONDS', '120'))
+SKILL_ALERT_RECOVERY_SECONDS = int(os.getenv('SKILL_ALERT_RECOVERY_SECONDS', '120'))
+SKILL_ALERT_MAX_GAP_SECONDS = int(os.getenv('SKILL_ALERT_MAX_GAP_SECONDS', '90'))
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

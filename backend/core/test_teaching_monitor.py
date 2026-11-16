@@ -5,7 +5,7 @@ from contextlib import aclosing
 from datetime import timedelta
 from unittest.mock import patch
 from asgiref.sync import async_to_sync, sync_to_async
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 from . import test_homework, coursework_service as service
 from .model_telemetry import Usage, model_context, measured_stream, observe_usage, usage_sink
@@ -166,6 +166,7 @@ class TeachingTests(TestCase):
         self.assertEqual(SkillMonitorHeartbeat.objects.count(),0);self.assertEqual(SkillMetricSample.objects.count(),0)
         self.assertNotIn('question',str(result.data))
 
+    @override_settings(SKILL_ALERT_FOR_SECONDS=0, SKILL_ALERT_RECOVERY_SECONDS=0)
     def test_monitor_aggregation_tokens_p95_business_failure_and_alert_lifecycle(self):
         now=timezone.now();skill=service.SKILLS['guidance']
         pk=self.guide().data['id'];CourseworkTask.objects.filter(pk=pk).update(created_at=now-timedelta(seconds=90))
@@ -185,6 +186,7 @@ class TeachingTests(TestCase):
         self.assertFalse(dashboard(self.course.pk,1)['monitor_stale'])
         self.assertEqual(len(dashboard(self.course.pk,24)['queue_curve']),3)
 
+    @override_settings(SKILL_ALERT_FOR_SECONDS=0, SKILL_ALERT_RECOVERY_SECONDS=0)
     def test_monitor_failure_minimum_and_interrupted_recovery(self):
         now=timezone.now();skill=service.SKILLS['guidance']
         for i in range(4):
