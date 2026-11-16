@@ -1,5 +1,7 @@
 # CampusClaw Team 工程规则
 
+2026-11-16用户最新范围决定见 docs/delivery-scope.md：公网改为本轮附加项，不阻塞本地交付；容量/RPO/RTO/保留期未确定，不自行编造或宣称达标。历史课程完整交付要求和未执行证据保留，真人独立验收不可代签。
+
 ## 当前交付
 
 当前维护个人项目导入的 v0.1.0 基础版。来源、范围和证据见 README.md、docs/baseline-v0.1.0.md 和 report.md。E1–E7 仍按 OpenSpec 草案单独实施，接入基础版不代表扩展已完成。

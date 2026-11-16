@@ -1,5 +1,7 @@
 # 基础版安全与工程检查
 
+2026-11-16本轮范围决定：公网部署作为附加项，先完成本地验收；容量/RPO/RTO/保留周期未确定。见 [范围决定](docs/delivery-scope.md)。完整课程的公网证据仍未取得，不冒称完整课程已验收。
+
 检查日期为 2026-11-04。源码版本与交付边界见 [基础版说明](docs/baseline-v0.1.0.md)。
 
 本轮已接通本地真实模型、Embedding 与 SMTP，修复两项资料索引，替换为 16 项教学技能。新增结果见 [教学更新记录](reports/teaching-update.md) 和 [教学调研](docs/teaching-skills-research.md)，下表保留完整课程要求的差距。
