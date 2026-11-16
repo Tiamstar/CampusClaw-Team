@@ -65,3 +65,20 @@ class SkillAlertEvent(models.Model):
 class SkillMonitorHeartbeat(models.Model):
     name = models.CharField(max_length=40, primary_key=True, default='skills')
     evaluated_at = models.DateTimeField()
+
+
+class RequestMetric(models.Model):
+    """Transport measurements only; no user, concrete path, query or request body."""
+    request_id = models.CharField(max_length=64, unique=True)
+    course = models.ForeignKey('core.Course', null=True, on_delete=models.SET_NULL)
+    route = models.CharField(max_length=255)
+    method = models.CharField(max_length=12)
+    status_code = models.PositiveSmallIntegerField()
+    streaming = models.BooleanField(default=False)
+    outcome = models.CharField(max_length=20)
+    duration_ms = models.PositiveIntegerField()
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField()
+
+    class Meta:
+        indexes = [models.Index(fields=['course', 'finished_at'], name='request_metric_course_end')]

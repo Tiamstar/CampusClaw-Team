@@ -33,6 +33,7 @@ class RequestAuditMiddleware:
     def __call__(self, request):
         request.request_id = uuid.uuid4().hex
         started = time.monotonic()
+        started_at = timezone.now()
         response = self.get_response(request)
         response["X-Request-ID"] = request.request_id
         if request.path.startswith("/api/"):
@@ -46,4 +47,6 @@ class RequestAuditMiddleware:
                          object_ref=json.dumps(object_ids, sort_keys=True), status=response.status_code,
                          request_id=request.request_id, duration_ms=round((time.monotonic() - started) * 1000))
             response["Cache-Control"] = "no-store"
+            from .request_metrics import measure_response
+            measure_response(request, response, started, started_at)
         return response

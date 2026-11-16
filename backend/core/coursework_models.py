@@ -31,6 +31,7 @@ class CourseworkTask(models.Model):
     events = models.JSONField(default=list)
     request_id = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True)
     finished_at = models.DateTimeField(null=True)
 
     class Meta:
@@ -39,4 +40,5 @@ class CourseworkTask(models.Model):
             models.UniqueConstraint(fields=['version', 'creator', 'kind'], condition=models.Q(status__in=['queued', 'running']), name='unique_active_coursework'),
             models.UniqueConstraint(fields=['course', 'creator'], condition=models.Q(kind='guidance', status__in=['queued', 'running']), name='unique_active_guidance'),
         ]
-        indexes = [models.Index(fields=['status', 'id'], name='coursework_queue')]
+        indexes = [models.Index(fields=['status', 'id'], name='coursework_queue'),
+                   models.Index(fields=['course', 'finished_at'], name='coursework_course_end')]

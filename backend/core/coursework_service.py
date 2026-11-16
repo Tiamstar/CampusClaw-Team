@@ -287,6 +287,7 @@ def process(task_id):
         except ValueError:
             finish(task, 'failed', '提交、成绩、技能配置或权限已变化，请重新发起'); return True
         task.status = 'running'; task.phase = 'read_answer'; task.revision += 1
+        task.started_at = timezone.now()
         task.lease_token = uuid.uuid4(); task.lease_until = timezone.now()+timedelta(seconds=180)
         task.events = [*task.events, {'phase': task.phase, 'at': timezone.now().isoformat()}]; task.save()
     started = time.monotonic(); result = {}; model = ''; error = ''

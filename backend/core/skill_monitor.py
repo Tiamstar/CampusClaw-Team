@@ -85,6 +85,7 @@ def evaluate(now=None):
 
 
 def dashboard(course_id,hours=24):
+    from .latency_metrics import http_dashboard, skill_duration_curves
     now=timezone.now();start=now-timedelta(hours=hours)
     samples=SkillMetricSample.objects.filter(course_id=course_id,bucket__gte=start)
     if hours>6:
@@ -95,6 +96,8 @@ def dashboard(course_id,hours=24):
     alerts=list(SkillAlert.objects.filter(course_id=course_id).values('id','skill_id','rule','firing','value','threshold','sample_size','changed_at','evaluated_at'))
     events=list(SkillAlertEvent.objects.filter(alert__course_id=course_id,created_at__gte=start).order_by('-id').values('id','alert__skill_id','alert__rule','firing','value','sample_size','created_at')[:50])
     return {'window':{'start':start,'end':now,'hours':hours},'skills':summary(course_id,start),'queue_curve':curve,
+            'http_latency':http_dashboard(course_id,start,now,hours),
+            'duration_curves':skill_duration_curves(course_id,start,now,hours),
             'curve_interval':'hour_average' if hours>6 else 'minute_sample','rules':RULES,'alerts':alerts,'events':events,
             'monitor_evaluated_at':heartbeat.evaluated_at if heartbeat else None,
             'monitor_stale':not heartbeat or heartbeat.evaluated_at<now-timedelta(seconds=120),

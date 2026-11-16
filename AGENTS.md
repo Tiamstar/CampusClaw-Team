@@ -14,6 +14,8 @@ SEC-08真实四步实验、模型虚假完成修正与教师课程审计见 repo
 
 MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期与并发消费见 docs/mcp-confirmation-delivery.md，真实账号课程11与审核依据见 reports/review-mcp-confirmation.md；未知副作用的超时或崩溃不得自动重放。
 
+完整HTTP响应耗时与三技能模型/任务/处理/排队曲线见 docs/latency-monitor-delivery.md，真实课程7及七类七维自审见 reports/review-latency-monitor.md；旧审计与未知领取时间不得混用或补零。
+
 ## 每次修改
 
 - 先读关联规约，记录 Requirement 与受影响的正常、失败、边界路径。行为变化同步文档。
