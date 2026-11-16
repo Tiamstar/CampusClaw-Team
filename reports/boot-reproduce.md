@@ -20,3 +20,5 @@ python scripts/smoke.py --sandbox
 另一位成员按 README 在自己机器上的复现仍待执行。本地初始化与自动测试覆盖基础版范围，完整课程主路径和公网验收继续按根报告推进。
 
 脱敏请求结果见 [HTTP 冒烟记录](smoke-result.json)。本次使用 mock 模型和真实 MCP/隔离执行，真实外部模型与 Embedding 回归留待配置后执行。
+
+2026-11-16命令更新：上述历史smoke命令现须追加`--retain-fixtures --output reports/smoke-new-run.local.json`，在独立mock环境运行。助手revision与一次性确认适配、本轮29次HTTP及隔离执行证据见 [交付冒烟](ci-smoke.md)。历史执行结果保持原记录，不将其视为当前提交运行。

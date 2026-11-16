@@ -53,3 +53,5 @@ MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期
 生产HTTPS覆盖与内部CA预演见 docs/production-deployment.md、reports/https-deployment.md；可信代理头只在backend不发布的拓扑启用。预演必须新项目/新卷、合成数据，无宿主端口，不迁移或公开既有教学库；内部CA通过不能写成公网受信证书交付。夹具须在bootstrap_tools首次创建服务账号之前导入。
 
 恢复来源选择及生产覆盖实测见 reports/recovery-source-selection.md；自定义Compose配置必须显式指定项目，并先核对db/backend身份、网络和数据库配置，禁止默默备份另一个本地库。备份/恢复业务数据不等于恢复TLS密钥或公网站点。
+
+当前交付冒烟见 reports/ci-smoke.md；必须mock、显式保留合成数据并写新证据文件，读取助手revision后绑定，MCP按待确认/显式执行/拒绝重放验证。不得恢复finally删库或把密码放进命令参数；本地成功不当作账单受阻的远端CI成功。

@@ -68,7 +68,7 @@ docker compose ps
 
 ```sh
 python scripts/check.py
-python scripts/smoke.py --sandbox
+python scripts/smoke.py --sandbox --retain-fixtures --output reports/smoke-new-run.local.json
 npx --yes --package=@fission-ai/openspec@1.15.0 openspec validate --all --strict --no-interactive
 ```
 

@@ -16,6 +16,8 @@
 
 2026-11-16 恢复来源补充：恢复工具支持显式生产项目/环境/Compose覆盖文件，并在导出前核对db/backend归属、网络和数据库配置。HTTPS覆盖库77表/3附件与原本地库76表/21附件均完整隔离恢复一致，原库保持运行。命令见 [恢复说明](docs/recovery-rehearsal.md)，实际结果与边界见 [来源选择审核](reports/recovery-source-selection.md)。
 
+2026-11-16 流水线冒烟补充：修复助手配置缺revision与MCP一次性确认契约不兼容；独立mock项目29次真实HTTP、数学MCP与隔离Python经确认执行通过，保留合成数据，失败仍逐步留证。执行及边界见 [审核](reports/ci-smoke.md)，本地成功不代表GitHub账单阻塞已解除。
+
 ## 第 9 课
 
 | 要求 | 当前结论 | 依据与待补内容 |

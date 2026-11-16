@@ -53,12 +53,13 @@ jobs:
           docker compose --profile build build sandbox-image
           docker compose up -d --wait --wait-timeout 180
           docker compose ps
-          python scripts/smoke.py --sandbox
           mkdir -p build-evidence
+          python scripts/smoke.py --sandbox --retain-fixtures --output build-evidence/smoke.json
           git rev-parse HEAD > build-evidence/commit.txt
           docker compose images --format json > build-evidence/images.json
           docker image save campusclaw-team-backend campusclaw-team-frontend | gzip > build-evidence/baseline-images.tar.gz
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: baseline-${{ github.sha }}
           path: build-evidence/
