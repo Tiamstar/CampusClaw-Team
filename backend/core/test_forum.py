@@ -1,4 +1,5 @@
 import json
+import httpx
 from datetime import timedelta
 from unittest.mock import patch, AsyncMock
 from django.test import TestCase
@@ -155,3 +156,93 @@ class ForumTests(TestCase):
         self.assertEqual([row['chunk_id'] for row in phrase_sources(self.post)],[chunk.id])
         chunk.entry.material.course=self.other;chunk.entry.material.save()
         self.assertEqual(phrase_sources(self.post),[])
+
+    def test_invalid_model_outputs_have_safe_specific_failure_codes(self):
+        chunk,citations=self.source()
+        cases=[('not-json PRIVATE-MODEL-TEXT','invalid_json'),
+               ('[]','invalid_schema'),
+               (json.dumps({'answer':42,'source_ids':[chunk.id]}),'invalid_schema'),
+               (json.dumps({'answer':'PRIVATE-MODEL-TEXT [资料1]','source_ids':[999999]}),'invalid_source'),
+               (json.dumps({'answer':'PRIVATE-MODEL-TEXT [资料99]','source_ids':[chunk.id]}),'citation_labels'),
+               ('PRIVATE-MODEL-TEXT'*2000,'output_limit')]
+        url=f'/api/forum/posts/{self.post.id}/drafts/'
+        from .forum_service import DRAFT_ERRORS
+        for raw,code in cases:
+            async def model(messages):yield raw,'test-model'
+            with self.subTest(code=code),patch('core.forum_service.search',new_callable=AsyncMock,return_value=citations), \
+                 patch('core.forum_service.model_stream',side_effect=model),self.assertLogs('campus.audit',level='INFO') as logs:
+                response=self.tc.post(url,{},format='json')
+            self.assertEqual(response.status_code,201)
+            self.assertEqual(response.data['status'],'failed')
+            self.assertEqual(response.data['error_code'],code)
+            self.assertEqual(response.data['error'],DRAFT_ERRORS[code])
+            self.assertEqual(response.data['body'],'')
+            self.assertEqual(response.data['citations'],[])
+            self.assertNotIn('PRIVATE-MODEL-TEXT',response.content.decode())
+            self.assertNotIn('PRIVATE-MODEL-TEXT','\n'.join(logs.output))
+            event=AuditEvent.objects.filter(action='forum.draft.failure').latest('id')
+            self.assertEqual(event.status,code)
+            self.assertEqual(event.object_ref,str(response.data['id']))
+            self.assertEqual(event.request_id,response.data['request_id'])
+            self.assertEqual(self.sc.get(url).status_code,403)
+            self.assertEqual(self.tc.post(f"/api/forum/drafts/{response.data['id']}/publish/",{'confirm':True,'body':'not allowed'},format='json').status_code,409)
+        self.assertFalse(ForumReply.objects.exists())
+
+    def test_retrieval_failure_is_distinct_from_model_failure(self):
+        with patch('core.forum_service.search',new_callable=AsyncMock,side_effect=RuntimeError('private SQL detail')), \
+             patch('core.forum_service.model_stream') as model:
+            response=self.tc.post(f'/api/forum/posts/{self.post.id}/drafts/',{},format='json')
+        self.assertEqual(response.data['error_code'],'retrieval_error')
+        self.assertNotIn('private SQL',response.content.decode());model.assert_not_called()
+
+    def test_transport_timeout_rate_limit_and_unknown_exceptions_are_redacted(self):
+        request=httpx.Request('POST','https://private.example.invalid?credential=PRIVATE-CREDENTIAL')
+        response=httpx.Response(429,request=request,text='PRIVATE-CREDENTIAL')
+        cases=[(TimeoutError('PRIVATE-CREDENTIAL'),'model_timeout'),
+               (httpx.ReadTimeout('PRIVATE-CREDENTIAL',request=request),'model_timeout'),
+               (httpx.HTTPStatusError('PRIVATE-CREDENTIAL',request=request,response=response),'model_rate_limit'),
+               (httpx.ConnectError('PRIVATE-CREDENTIAL',request=request),'model_service'),
+               (RuntimeError('PRIVATE-CREDENTIAL'),'internal_error')]
+        for exc,code in cases:
+            with self.subTest(code=code),patch('core.forum_views.generate_draft',new_callable=AsyncMock,side_effect=exc), \
+                 self.assertLogs('campus.audit',level='INFO') as logs:
+                result=self.tc.post(f'/api/forum/posts/{self.post.id}/drafts/',{},format='json')
+            self.assertEqual(result.data['error_code'],code)
+            self.assertNotIn('PRIVATE-CREDENTIAL',result.content.decode())
+            self.assertNotIn('PRIVATE-CREDENTIAL','\n'.join(logs.output))
+            row=ForumDraft.objects.get(pk=result.data['id'])
+            self.assertNotIn('PRIVATE-CREDENTIAL',row.error)
+
+    def test_old_errors_are_not_backfilled_and_interruptions_are_recognizable(self):
+        old=ForumDraft.objects.create(post=self.post,requested_by=self.t,status='failed',error='草稿生成失败或已超时，请重试或人工回复')
+        running=ForumDraft.objects.create(post=self.post,requested_by=self.t,status='running')
+        ForumDraft.objects.filter(pk=running.pk).update(created_at=timezone.now()-timedelta(minutes=6))
+        scan_reminders()
+        rows=self.tc.get(f'/api/forum/posts/{self.post.id}/drafts/').data['items']
+        by_id={r['id']:r for r in rows}
+        self.assertEqual(by_id[old.id]['error_code'],'legacy_unknown')
+        self.assertEqual(by_id[running.id]['error_code'],'interrupted')
+        old.refresh_from_db();self.assertEqual(old.error,'草稿生成失败或已超时，请重试或人工回复')
+
+    def test_permission_loss_does_not_return_generated_private_content(self):
+        async def revoke(post):
+            from asgiref.sync import sync_to_async
+            await sync_to_async(lambda:Membership.objects.filter(course=self.c,user=self.t).delete())()
+            return 'private generated text',[],''
+        with patch('core.forum_views.generate_draft',side_effect=revoke):
+            response=self.tc.post(f'/api/forum/posts/{self.post.id}/drafts/',{},format='json')
+        self.assertEqual(response.status_code,403)
+        row=ForumDraft.objects.get(post=self.post)
+        self.assertEqual(row.body,'')
+        from .forum_service import stored_failure_code
+        self.assertEqual(stored_failure_code(row),'permission_lost')
+
+    def test_state_change_has_specific_code_without_accepting_late_result(self):
+        async def change(post):
+            from asgiref.sync import sync_to_async
+            await sync_to_async(ForumSettings.objects.filter(course=self.c).update)(draft_enabled=False,revision=1)
+            return 'private late output',[],''
+        with patch('core.forum_views.generate_draft',side_effect=change):
+            response=self.tc.post(f'/api/forum/posts/{self.post.id}/drafts/',{},format='json')
+        self.assertEqual(response.data['error_code'],'state_changed')
+        self.assertEqual(response.data['body'],'');self.assertFalse(ForumReply.objects.exists())

@@ -15,6 +15,7 @@ from .models import (ForumPost, ForumReply, ForumDraft, ForumSettings, ForumTodo
 from .views import member, fail
 from .audit import record_audit
 from .forum_service import settings_for, generate_draft, close_todos, sources_current, citation_data
+from .forum_service import DRAFT_ERRORS, DraftGenerationError, draft_failure_code, stored_failure_code
 
 
 def api_view(methods):
@@ -212,6 +213,7 @@ def replies(request,post_id):
 
 def draft_data(draft):
     return {'id':draft.id,'status':draft.status,'body':draft.body,'citations':citation_data(draft),'error':draft.error,
+            'error_code':stored_failure_code(draft),
             'model':draft.model,'skill_version':draft.skill_version,'request_id':draft.request_id,'created_at':draft.created_at,
             'published_at':draft.published_at,'confirmed_by':draft.confirmed_by_id}
 
@@ -236,17 +238,23 @@ def drafts(request,post_id):
         body,citations,model=async_to_sync(generate_draft)(post)
         with transaction.atomic():
             config=ForumSettings.objects.select_for_update().get(pk=config.pk)
-            access(request.user,post.course_id,True)
+            if member(request.user,post.course_id,'teacher') is None:
+                raise DraftGenerationError('permission_lost')
             draft=ForumDraft.objects.select_for_update().get(pk=draft.pk)
             if not config.draft_enabled or config.revision!=draft.settings_revision or draft.status!='running':
-                raise ValueError('配置或任务状态已变更')
+                raise DraftGenerationError('state_changed')
             draft.body,draft.citations,draft.model=body,citations,model
             draft.status='awaiting_review' if citations else 'no_evidence'
             draft.save()
-    except Exception:
-        ForumDraft.objects.filter(pk=draft.pk,status='running').update(status='failed',error='草稿生成失败或已超时，请重试或人工回复')
+    except Exception as exc:
+        code=draft_failure_code(exc)
+        changed=ForumDraft.objects.filter(pk=draft.pk,status='running').update(status='failed',error=DRAFT_ERRORS[code])
+        if changed:
+            record_audit(actor_id=request.user.id,course_id=post.course_id,action='forum.draft.failure',
+                         object_ref=str(draft.pk),status=code,request_id=request.request_id)
         draft.refresh_from_db()
     audit(request,post,'draft.'+draft.status)
+    access(request.user,post.course_id,True)
     return Response(draft_data(draft),status=201)
 
 

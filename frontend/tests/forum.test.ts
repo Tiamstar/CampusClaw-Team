@@ -20,6 +20,21 @@ beforeEach(()=>{
   })
 })
 describe('course forum',()=>{
+  it('shows actionable safe draft failure without a publish control',async()=>{
+    const original=vi.mocked(api).getMockImplementation()!
+    vi.mocked(api).mockImplementation(async(path,method,...rest)=>{
+      if(path.includes('drafts/'))return {items:[{id:3,status:'failed',body:'',citations:[],model:'',skill_version:'v1',
+        error_code:'citation_labels',error:'回答的引用标记与所选资料不一致，已阻止该草稿；请人工核对来源。'}],next_page:null}
+      return original(path,method,...rest)
+    })
+    const w=mount(ForumWorkspace,{props:{courseId:1,isTeacher:true}});await flushPromises()
+    await w.get('.forum-post').trigger('click');await flushPromises()
+    expect(w.get('.forum-drafts [role=alert]').text()).toContain('引用标记与所选资料不一致')
+    expect(w.text()).toContain('请人工核对来源')
+    expect(w.findAll('button').some(b=>b.text()==='确认并公开回复')).toBe(false)
+    expect(w.text()).not.toContain('citation_labels')
+    w.unmount()
+  })
   it('renders the retained XSS corpus safely while preserving formulas and code',async()=>{
     const previous=question.body
     question.body=securityCases.xss.body

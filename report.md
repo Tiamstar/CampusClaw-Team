@@ -6,7 +6,9 @@
 
 个人项目可作为小组基座。已有登录、课程隔离、文件权限、Agent、技能与 MCP 实现和回归测试，继续迭代能保留这些积累。本轮收紧请求与工具边界，并增加可重复检查和交付依据。
 
-2026-11-16 本地进展：安全/公式、E3 论坛、E1 测验以及 E4 权重成绩册/快照/Excel 已实现并自测，后续补充个人/班级学情与真实只读 MCP，最新统一检查199后端通过，前端最终82项及生产构建通过。证据见 [测验](docs/quiz-delivery.md)、[成绩册第一阶段](docs/gradebook-delivery.md)。证据另见 [学情与 MCP](docs/learning-mcp-delivery.md)。知识图谱抽取/校对/无环审批及掌握度着色也已实现，见 [图谱交付](docs/graph-delivery.md)。复习路径与站内提醒也已实现、自测，见 [复习路径](docs/review-path-delivery.md)。诊断报告与教师修订/复核发布也已本地自测，见 [诊断交付](docs/diagnostic-delivery.md)。以下课程交付差距继续保留待办，不将自动测试替代真人交叉验收。
+2026-11-16 本地进展：安全/公式、E3 论坛、E1 测验以及 E4 权重成绩册/快照/Excel 已实现并自测，后续补充个人/班级学情与真实只读 MCP，最新统一检查205后端通过，前端最终83项及生产构建通过。证据见 [测验](docs/quiz-delivery.md)、[成绩册第一阶段](docs/gradebook-delivery.md)。证据另见 [学情与 MCP](docs/learning-mcp-delivery.md)。知识图谱抽取/校对/无环审批及掌握度着色也已实现，见 [图谱交付](docs/graph-delivery.md)。复习路径与站内提醒也已实现、自测，见 [复习路径](docs/review-path-delivery.md)。诊断报告与教师修订/复核发布也已本地自测，见 [诊断交付](docs/diagnostic-delivery.md)。以下课程交付差距继续保留待办，不将自动测试替代真人交叉验收。
+
+2026-11-16 论坛诊断补充：新草稿使用固定安全失败分类，教师可获得处理建议；异常原文和失败模型输出不写入提示或审计，旧失败保持未知。课程14帖子13新增草稿6为待审核且未公开，旧草稿5保持不变；本次成功不用于推断旧失败原因。实际验证及七类七维审核见 [诊断记录](reports/forum-diagnostics.md) 和 [证据](reports/forum-diagnostics-evidence.json)。
 
 ## 第 9 课
 
