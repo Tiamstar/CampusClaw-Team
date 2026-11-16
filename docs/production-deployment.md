@@ -29,6 +29,14 @@ docker compose --env-file .env.production -p campusclaw-production -f docker-com
 
 后端启动会迁移、收集静态资源和初始化平台工具。首次数据库无需恢复旧数据；升级已有部署时必须先备份、在独立环境验证迁移/恢复。不要使用`down -v`，不要复用现有`campusclaw-team`卷。Caddy证书数据保留于该项目独立caddydata卷。不要同时在同一宿主用不同项目标签重建相同镜像；运行容器不会自动换镜像，但后续重建应使用经记录的提交及镜像ID。
 
+生产数据库/媒体完整备份与隔离恢复须明确来源项目，不使用默认本地来源：
+
+```sh
+python scripts/rehearse_recovery.py --backup-dir ../.backups/production-new-run --project campusclaw-production --env-file .env.production --compose-file docker-compose.yml --compose-file deploy/compose.production.yml
+```
+
+具体来源核对、私有目录、保留和RPO/RTO限制见 [恢复说明](recovery-rehearsal.md)。该命令备份数据库/媒体，不备份Caddy私钥或生产环境密钥，后两者需另按受控配置恢复流程保管；不可把业务数据一致性恢复当作完整公网站点恢复。
+
 ## TLS代理与权限
 
 Caddy终止TLS，业务路径直接转发后端，前端Nginx仅服务SPA。边缘代理覆盖`X-Real-IP`/`X-Forwarded-Proto`，API和SSE不经过二次Nginx代理。后端端口不发布，生产覆盖启用可信TLS头、HTTPS跳转、安全Cookie、一天HSTS；不设置includeSubDomains/preload。后台CSRF按HTTPS同源判定。私有HTTP健康检查豁免跳转，数据库故障仍503，不能把跳转成功当作健康。

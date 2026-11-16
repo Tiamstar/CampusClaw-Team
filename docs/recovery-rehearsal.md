@@ -10,6 +10,18 @@ Docker Compose 的 db 和 backend 必须正常运行。使用 Python 标准库�
 python scripts/rehearse_recovery.py --backup-dir ../.backups/recovery-new-run
 ```
 
+上述无参数来源仅对应仓库默认Compose项目，脚本忽略宿主`COMPOSE_*`隐式覆盖。生产部署必须明确项目和配置合并顺序，避免备份成另一个本地库：
+
+```sh
+python scripts/rehearse_recovery.py --backup-dir ../.backups/production-new-run --project campusclaw-production --env-file .env.production --compose-file docker-compose.yml --compose-file deploy/compose.production.yml
+```
+
+使用任何自定义环境/Compose文件时必须提供`--project`，文件必须存在，参数通过数组传给Docker，不拼接shell。凭据由Compose私下读取，不作为命令行密码传递，不打印完整配置或inspect环境。显式项目可单独用于同一基础配置的另一项目。
+
+备份前核对db/backend均为运行中的常规Compose服务、属于同一选定项目，且后端配置指向该db共享网络别名、默认5432端口及相同数据库名/角色/密码。混用项目、one-off、停止服务、外部数据库或配置不符均失败，尚未导出快照或归档媒体。本工具不支持云数据库、非默认数据库端口或跨网络连接；这类部署应采用专门恢复流程，不能因找到本地db服务而误备份。校验只读容器元数据，公开证据仅记录项目/容器身份与镜像，不记录环境值。
+
+生产覆盖及原默认项目的实际恢复结果见 [来源选择审核](../reports/recovery-source-selection.md)。
+
 目标必须是仓库外的新目录；脚本拒绝覆盖已有目录，也不自动挑选或覆盖已有备份。备份数据库含账号密码哈希、令牌和教学数据，媒体含附件；在具有适当访问权限的私有目录执行，不上传Git、不发送给他人。POSIX新目录为0700，Windows继承父目录ACL，执行者需确认该父目录为私人目录；脚本不配置加密或远端备份。
 
 ## 一致性与隔离

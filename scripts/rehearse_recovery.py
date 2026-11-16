@@ -8,7 +8,9 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -141,11 +143,63 @@ def backup_directory(path):
     return path
 
 
+def compose_source(project=None, env_file=None, compose_files=None):
+    command = ['compose']
+    if project:
+        if not re.fullmatch(r'[a-z0-9][a-z0-9_-]{0,62}', project):
+            raise ValueError('Use a plain lowercase Compose project name')
+        command += ['--project-name', project]
+    if env_file or compose_files:
+        if not project:
+            raise ValueError('An explicit project is required with custom Compose configuration')
+        if env_file:
+            path = Path(env_file).resolve()
+            if not path.is_file():raise ValueError('Environment file does not exist')
+            command += ['--env-file', str(path)]
+        for filename in compose_files or []:
+            path = Path(filename).resolve()
+            if not path.is_file():raise ValueError('Compose file does not exist')
+            command += ['--file', str(path)]
+    return command
+
+
+def validate_source_pair(db_info, backend_info, project=None):
+    """Reject mixed deployments before exporting a snapshot or reading media."""
+    infos = [(db_info, 'db'), (backend_info, 'backend')]
+    projects = set()
+    for info, service_name in infos:
+        labels = info['Config'].get('Labels') or {}
+        actual = labels.get('com.docker.compose.project')
+        if (not info['State']['Running'] or not actual
+                or labels.get('com.docker.compose.service') != service_name
+                or labels.get('com.docker.compose.oneoff', '').lower() != 'false'):
+            raise ValueError('Source must be running regular db/backend Compose services')
+        projects.add(actual)
+    if len(projects) != 1 or (project and projects != {project}):
+        raise ValueError('Source database and backend must belong to the selected Compose project')
+    common = set(db_info['NetworkSettings']['Networks']) & set(backend_info['NetworkSettings']['Networks'])
+    aliases = {db_info.get('Name', '').lstrip('/')}
+    for net in common:
+        aliases.update(db_info['NetworkSettings']['Networks'][net].get('Aliases') or [])
+    db_env = dict(v.split('=', 1) for v in db_info['Config']['Env'] if '=' in v)
+    backend_env = dict(v.split('=', 1) for v in backend_info['Config']['Env'] if '=' in v)
+    if (not common or backend_env.get('POSTGRES_HOST') not in aliases
+            or any(not db_env.get(k) or db_env[k] != backend_env.get(k)
+                   for k in ['POSTGRES_USER', 'POSTGRES_DB', 'POSTGRES_PASSWORD'])
+            or backend_env.get('POSTGRES_PORT', '5432') != '5432'):
+        raise ValueError('Backend must use the selected database on a shared network with matching database configuration')
+    return next(iter(projects))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--backup-dir', type=Path, required=True,
                         help='New private directory outside the repository; never overwritten')
+    parser.add_argument('--project', help='Explicit source Compose project (required for custom configuration)')
+    parser.add_argument('--env-file', type=Path, help='Source Compose environment file; credentials are never printed')
+    parser.add_argument('--compose-file', type=Path, action='append', help='Source Compose file in merge order; repeat for overrides')
     args = parser.parse_args()
+    compose = compose_source(args.project, args.env_file, args.compose_file)
     folder = backup_directory(args.backup_dir)
     suffix = uuid.uuid4().hex[:12]
     name = 'campus-recovery-' + suffix
@@ -157,10 +211,11 @@ def main():
                 'source_business_writes':False, 'external_calls':False,
                 'checks':{}, 'passed':False}
     log = (folder / 'private-diagnostics.log').open('w', encoding='utf-8')
+    command_env = {k:v for k,v in os.environ.items() if not k.startswith('COMPOSE_')}
 
     def run(args, *, binary=False, timeout=180):
         result = subprocess.run(['docker', *args], cwd=ROOT, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, timeout=timeout)
+                                stderr=subprocess.PIPE, timeout=timeout, env=command_env)
         if result.stderr:
             log.write(result.stderr.decode('utf-8', errors='replace')); log.flush()
         if result.returncode:
@@ -169,7 +224,7 @@ def main():
         return result.stdout if binary else result.stdout.decode('utf-8').strip()
 
     def service(name):
-        cid = run(['compose','ps','-q',name])
+        cid = run([*compose,'ps','-q',name])
         if not cid or '\n' in cid:
             raise RuntimeError('Exactly one running Compose service required: ' + name)
         state = json.loads(run(['inspect',cid]))[0]
@@ -181,6 +236,8 @@ def main():
     try:
         source_db, db_info = service('db')
         backend, backend_info = service('backend')
+        evidence['source_project'] = validate_source_pair(db_info, backend_info, args.project)
+        evidence['source_containers'] = {'db':source_db, 'backend':backend}
         evidence['commit'] = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
         evidence['script_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
         evidence['database_image'] = db_info['Image']

@@ -63,3 +63,50 @@ class RecoverySafetyTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 recovery.backup_directory(target)
             self.assertEqual(marker.read_text(), 'must survive')
+
+
+class RecoverySourceSelectionTests(unittest.TestCase):
+    def pair(self):
+        env = ['POSTGRES_DB=fixture', 'POSTGRES_USER=fixture', 'POSTGRES_PASSWORD=synthetic-only']
+        def info(service):
+            return {'Name':'/production-'+service+'-1', 'State':{'Running':True},
+                    'Config':{'Labels':{'com.docker.compose.project':'production',
+                                       'com.docker.compose.service':service, 'com.docker.compose.oneoff':'False'},
+                              'Env':env + (['POSTGRES_HOST=db'] if service=='backend' else [])},
+                    'NetworkSettings':{'Networks':{'production_default':{'Aliases':[service]}}}}
+        return info('db'), info('backend')
+
+    def test_custom_configuration_requires_explicit_project(self):
+        with self.assertRaises(ValueError):recovery.compose_source(env_file='private.env')
+        with self.assertRaises(ValueError):recovery.compose_source(project='unsafe --context other')
+        with tempfile.TemporaryDirectory() as folder:
+            env=Path(folder)/'.env';env.write_text('private')
+            base=Path(folder)/'compose.yml';base.write_text('services: {}')
+            override=Path(folder)/'production.yml';override.write_text('services: {}')
+            result=recovery.compose_source('production',env,[base,override])
+            self.assertEqual(result,['compose','--project-name','production','--env-file',str(env.resolve()),
+                                     '--file',str(base.resolve()),'--file',str(override.resolve())])
+
+    def test_same_project_database_and_backend_accepted(self):
+        self.assertEqual(recovery.validate_source_pair(*self.pair(),'production'),'production')
+
+    def test_mixed_project_stopped_or_oneoff_rejected(self):
+        for mutation in ['project','stopped','oneoff','wrong_service']:
+            db,backend=self.pair()
+            if mutation=='project':backend['Config']['Labels']['com.docker.compose.project']='other'
+            if mutation=='stopped':backend['State']['Running']=False
+            if mutation=='oneoff':db['Config']['Labels']['com.docker.compose.oneoff']='True'
+            if mutation=='wrong_service':backend['Config']['Labels']['com.docker.compose.service']='worker'
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                recovery.validate_source_pair(db,backend,'production')
+
+    def test_unrelated_database_host_network_or_credentials_rejected(self):
+        for mutation in ['host','network','database','password','port']:
+            db,backend=self.pair()
+            if mutation=='network':backend['NetworkSettings']['Networks']={'other':{'Aliases':['backend']}}
+            else:
+                prefix, value={'host':('POSTGRES_HOST','external-db'), 'database':('POSTGRES_DB','other'),
+                               'password':('POSTGRES_PASSWORD','other'), 'port':('POSTGRES_PORT','5433')}[mutation]
+                backend['Config']['Env']=[v for v in backend['Config']['Env'] if not v.startswith(prefix+'=')]+[prefix+'='+value]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                recovery.validate_source_pair(db,backend,'production')

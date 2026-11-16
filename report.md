@@ -14,6 +14,8 @@
 
 2026-11-16 HTTPS预演补充：专用生产Compose只发布80/443，独立配置随机凭据；全新内部网络实际TLS验证、登录/成绩/跨班、Cookie/CSRF、SSE及伪造代理头共18项通过，原教学卷不复用。命令见 [部署说明](docs/production-deployment.md)，失败迭代和边界见 [审核](reports/https-deployment.md)。没有公网地址，不替代真实服务或组员独立验收。
 
+2026-11-16 恢复来源补充：恢复工具支持显式生产项目/环境/Compose覆盖文件，并在导出前核对db/backend归属、网络和数据库配置。HTTPS覆盖库77表/3附件与原本地库76表/21附件均完整隔离恢复一致，原库保持运行。命令见 [恢复说明](docs/recovery-rehearsal.md)，实际结果与边界见 [来源选择审核](reports/recovery-source-selection.md)。
+
 ## 第 9 课
 
 | 要求 | 当前结论 | 依据与待补内容 |
