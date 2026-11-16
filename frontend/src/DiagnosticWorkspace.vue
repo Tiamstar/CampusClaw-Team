@@ -3,7 +3,8 @@ import {ref,onMounted} from 'vue'
 import {api,openProtected,type Member} from './api'
 import './forum.css'
 type Claim={point_id:number;finding:string;recommendation:string;refs:string[]}
-type Report={id:number;student_id:number;student_name:string;status:string;phase:string;revision:number;current_version:number;stale:boolean;error:string;model:string;skill:string;window:{start:string;end:string};version:null|{number:number;content:any;content_hash:string;html_url:string;pdf_url:string}}
+type ReportContent={claims:Claim[];limitations:string;window:{start:string;end:string};basis_version:string;point_names:Record<number,string>;metrics:{id:number;name:string;mastery:string|null;sample_size:number}[];evidence:Record<string,{attempt_id:number;question_id:number;score:string;maximum:string;grade_revision:number}>}
+type Report={id:number;student_id:number;student_name:string;status:string;phase:string;revision:number;current_version:number;stale:boolean;error:string;model:string;skill:string;window:{start:string;end:string};version:null|{number:number;content:ReportContent;content_hash:string;html_url:string;pdf_url:string}}
 const props=defineProps<{courseId:number;isTeacher:boolean}>()
 const reports=ref<Report[]>([]),next=ref<number|null>(null),students=ref<Member[]>([]),student=ref(''),busy=ref(false),loading=ref(true),error=ref(''),notice=ref(''),config=ref({enabled:true,revision:0})
 const drafts=ref<Record<number,Claim[]>>({}),checks=ref<Record<number,number[]>>({}),reasons=ref<Record<number,string>>({})
