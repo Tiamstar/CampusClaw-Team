@@ -41,3 +41,5 @@ MCP一次性确认、所有者私有卡片、版本/定义绑定、5分钟过期
 前端开发依赖修复与定向覆盖维护依据见 reports/dependency-refresh.md；升级工具链须重新核对Node22容器、格式化依赖兼容性、类型检查、回归及全量审计。
 
 完整数据库/媒体只读快照与隔离恢复工具见 docs/recovery-rehearsal.md、reports/recovery-rehearsal.md；备份仅放仓库外的新私有目录，不覆盖源库或源卷。本机恢复观察不能替代团队冻结RPO/RTO和独立验收。
+
+双学生并发HTTP联调工具verify_x01与课程13结果见 reports/x01.md；第二学生为不可密码登录的合成账号，人工预索引/候选夹具、真实worker计划和HTTP审批分别标注。数据保留，不把该工程自测冒充双真人演示或成员独立验收。
