@@ -279,6 +279,8 @@ def save_grade_revision(version, actor, reason, reviewed_items=None, ai_task=Non
         version=version, revision=version.grading_revision, score=version.score, feedback=version.feedback,
         published=bool(version.published_at), actor=actor, reason=reason, reviewed_items=reviewed_items, ai_task=ai_task,
     )
+    from .notification_service import notify_assignment_grade
+    notify_assignment_grade(version)
 
 
 @api_view(['POST'])
@@ -342,6 +344,27 @@ def publish_grade(request, version_id):
             return fail('提交或批改记录已更新，请刷新后重试', 409)
         if version.score is None:
             return fail('请先保存批改成绩')
+        if bool(version.published_at) == request.data['published']:
+            return Response(version_data(version, teacher=True))
         version.published_at = timezone.now() if request.data['published'] else None
         save_grade_revision(version, request.user, '公开成绩' if version.published_at else '撤回公开')
     return Response(version_data(version, teacher=True))
+
+
+@api_view(['GET'])
+def grading_queue(request):
+    from .grading_service import pending_assignment_versions, pending_quiz_attempts
+    try:
+        page=int(request.query_params.get('page','1'))
+        if not 1<=page<=10000:raise ValueError()
+    except (ValueError,TypeError):return fail('页码无效')
+    courses=Membership.objects.filter(user=request.user,role='teacher',user__is_active=True).values('course_id')
+    kind=request.query_params.get('kind','assignment')
+    if kind not in ['assignment','quiz']:return fail('批改类型无效')
+    if kind=='quiz':
+        attempts=pending_quiz_attempts(courses).select_related('quiz__course','student').order_by('submitted_at','pk')
+        attempts=list(attempts[(page-1)*30:page*30+1])
+        return Response({'items':[{'kind':'quiz','version_id':a.pk,'attempt_id':a.pk,'version_number':a.number,'student_id':a.student_id,'student_name':a.student.display_name,'assignment_title':a.quiz.title,'course_id':a.quiz.course_id,'course_name':a.quiz.course.name,'submitted_at':a.submitted_at,'status':'submitted'} for a in attempts[:30]],'next_page':page+1 if len(attempts)>30 else None})
+    rows=pending_assignment_versions(courses).select_related('submission__assignment__course','submission__student').order_by('submitted_at','pk')
+    rows=list(rows[(page-1)*30:page*30+1])
+    return Response({'items':[{'version_id':v.pk,'version_number':v.number,'student_id':v.submission.student_id,'student_name':v.submission.student.display_name,'assignment_id':v.submission.assignment_id,'assignment_title':v.submission.assignment.title,'course_id':v.submission.assignment.course_id,'course_name':v.submission.assignment.course.name,'submitted_at':v.submitted_at,'status':version_status(v)} for v in rows[:30]],'next_page':page+1 if len(rows)>30 else None})

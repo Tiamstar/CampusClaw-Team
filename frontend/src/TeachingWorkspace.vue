@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import WorkspaceSkeleton from './WorkspaceSkeleton.vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { api } from './api'
 import { renderMarkdown } from './htmlArtifacts'
@@ -36,7 +37,7 @@ onBeforeUnmount(()=>{alive=false;serial++;window.clearInterval(timer)})
 <template>
 <section class="teaching-workspace">
 <h2>教学技能</h2><p>解题引导使用本课程资料提供提示；作业批改与错题讲解请进入对应作业。AI 建议须教师复核后才能成为正式成绩。</p>
-<p v-if="loading" role="status">正在加载教学技能…</p><p v-if="error" role="alert">{{error}}</p><p v-if="notice" role="status">{{notice}}</p><button class="secondary" :disabled="busy" @click="refresh">刷新记录</button>
+<p v-if="loading" role="status">正在加载教学技能…</p><WorkspaceSkeleton kind="cards" v-if="loading"/><p v-if="error" role="alert">{{error}}</p><p v-if="notice" role="status">{{notice}}</p><button class="secondary" :disabled="busy" @click="refresh">刷新记录</button>
 <template v-if="config">
 <details v-if="isTeacher"><summary>三项技能统一开关 · 配置 v{{config.revision}}</summary>
 <label><input v-model="config.guidance_enabled" type="checkbox" :disabled="busy" @change="configDirty=true">解题引导</label><label><input v-model="config.grading_enabled" type="checkbox" :disabled="busy" @change="configDirty=true">作业批改</label><label><input v-model="config.explanation_enabled" type="checkbox" :disabled="busy" @change="configDirty=true">错题讲解</label><button class="secondary" :disabled="busy" @click="save">保存技能开关</button></details>

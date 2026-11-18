@@ -6,6 +6,9 @@ from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from pgvector.django import VectorField
 from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion, QuestionImportBatch
+from .quiz_models import ExamSource, QuestionAsset, QuestionGroup
+from .quiz_models import ExamPaperEntry, ExamPaperRevision
+from .notification_models import GradeNotification
 
 
 class AuthRateLimit(models.Model):
@@ -49,6 +52,9 @@ class ForumPost(models.Model):
     anonymous = models.BooleanField(default=False)
     pinned = models.BooleanField(default=False)
     featured = models.BooleanField(default=False)
+    resolved_reply = models.ForeignKey('ForumReply', null=True, blank=True, on_delete=models.PROTECT, related_name='resolved_posts')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    revision = models.PositiveIntegerField(default=0)
     points = models.ManyToManyField(KnowledgePoint, blank=True)
     mentions = models.ManyToManyField('User', related_name='forum_mentions', blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -477,6 +483,6 @@ from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource,
 
 from .review_models import ReviewPlan, ReviewReminder
 from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion
-from .coursework_models import CourseworkSettings, CourseworkTask
+from .coursework_models import CourseworkSettings, CourseworkTask, WrongAnswerReview
 from .telemetry_models import ModelCall, SkillMetricSample, SkillAlert, SkillAlertEvent, SkillMonitorHeartbeat, RequestMetric
 from .confirmation_models import ToolConfirmation

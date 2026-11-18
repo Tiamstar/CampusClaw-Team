@@ -108,6 +108,21 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+  exam-worker:
+    mem_limit: 1g
+    image: campusclaw-team-backend
+    environment: *backend-environment
+    volumes: [uploads:/app/media]
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    command: python manage.py process_exam_sources --loop
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "process_exam_sources", "--health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
   coursework-worker:
     mem_limit: 1g
     image: campusclaw-team-backend

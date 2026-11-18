@@ -85,3 +85,20 @@
  .chat-page .agent-options { gap:6px; }
  .chat-page .composer-bar { gap:5px; padding-left:12px; }
 }
+
+/* Conversation uses the same course header and tabs as other course pages. */
+.conversation-page .agent-workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);height:calc(100dvh - 300px);min-height:560px;max-height:none}
+.conversation-page .agent-workspace.has-preview{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.conversation-page .agent-workspace.preview-expanded{grid-template-columns:minmax(0,1fr)}
+.conversation-page .agent-chat{height:auto;min-height:0;overflow:hidden}
+.conversation-page .agent-chat-head h2{max-width:36vw}
+.conversation-page .agent-chat>.confirmations{flex:none;margin:0 16px;max-height:180px}
+.course-search{display:grid;gap:8px;max-width:460px;margin:0 0 22px}.course-search input{width:100%;box-sizing:border-box}
+.agent-waiting{color:#747986;font-size:14px;padding:16px 0}.tool-details{font-size:12px;color:#7a7d85;margin-top:10px}.tool-details summary{cursor:pointer}.tool-details .used-tools{margin-top:8px}
+@media(max-width:900px){.conversation-page .agent-workspace,.conversation-page .agent-workspace.has-preview{display:grid;grid-template-columns:minmax(0,1fr);height:calc(100dvh - 270px);min-height:520px}.conversation-page .agent-chat-head h2{max-width:70vw}.conversation-page .agent-chat-head{padding:12px}.conversation-page .agent-messages{padding:16px 12px}.conversation-page .agent-composer{padding:8px 10px}.conversation-page .composer-bar{flex-wrap:wrap;gap:6px}.conversation-page .agent-options{gap:6px}.conversation-page .composer-actions{margin-left:auto}}
+
+/* Keep navigation and sign-out reachable even on a short/mobile viewport. */
+.signed-in .sidebar{overflow-y:auto;overflow-x:hidden}.signed-in .sidebar>.brand,.signed-in .sidebar>.sidebar-section,.signed-in .sidebar>.course-nav,.signed-in .sidebar>.sidebar-actions,.signed-in .sidebar>.sidebar-pages,.signed-in .sidebar>.sidebar-user{flex-shrink:0}.signed-in .sidebar>.course-nav{max-height:220px;overflow-y:auto}.signed-in .sidebar>.sidebar-user{position:sticky;bottom:0;background:#f6f5f3;z-index:2}
+
+/* Keep long course titles within the mobile toolbar. */
+.workspace-title{min-width:0;flex:1}

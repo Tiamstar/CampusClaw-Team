@@ -15,7 +15,8 @@ type Trace = {id:number;status:string;model:string;started_at:string;events:{eve
 const sourceFilter = ref('all')
 const sourceOptions = computed(()=>[{id:'all',name:'全部来源'},...Array.from(new Set(skills.value.filter(s=>s.builtin).map(s=>s.source))).map(source=>({id:source,name:source})),{id:'uploaded',name:'我的上传'}])
 function matchesSource(s:Skill){return sourceFilter.value==='all'||(sourceFilter.value==='uploaded'?!s.builtin:s.source===sourceFilter.value)}
-const section = ref('skills'), search = ref(''), category = ref('全部'), skills = ref<Skill[]>([]), apps = ref<App[]>([])
+const advanced=ref(false)
+const section = ref('apps'), search = ref(''), category = ref('全部'), skills = ref<Skill[]>([]), apps = ref<App[]>([])
 const config = ref<Config>({app_id:'general',template:'',skill_ids:[],mcp_refs:[],use_knowledge:false,revision:0,can_edit:false})
 const platformServers = ref<Server[]>([])
 const servers = ref<Server[]>([]), traces = ref<Trace[]>([]), detail = ref<Skill|null>(null), manager = ref(false)
@@ -53,7 +54,7 @@ onMounted(()=>attempt(load))
 <div class="studio">
   <div class="studio-top"><div><span class="studio-eyebrow">CAMPUSCLAW / WORKSPACE</span><h2>让每一种教学，有合适的帮手<span>✦</span></h2><p>备课、测评、辅导与复习，从本课程的材料和学习目标开始。</p></div><div class="studio-count"><strong>{{config.skill_ids.length.toString().padStart(2,'0')}}</strong><span>技能已添加</span></div></div>
   <p class="studio-help" role="status">课程配置 v{{config.revision}} · {{config.can_edit?'任课教师可编辑':'只读，由任课教师维护'}} · 个人上传不会自动公开</p>
-  <nav class="studio-nav"><button v-for="item in nav" :key="item.id" :class="{active:section===item.id}" @click="switchSection(item.id)"><component :is="item.icon" :size="16"/>{{item.name}}</button></nav>
+  <nav class="studio-nav"><button v-for="item in nav.filter(item=>advanced||!['mcp','traces'].includes(item.id))" :key="item.id" :class="{active:section===item.id}" @click="switchSection(item.id)"><component :is="item.icon" :size="16"/>{{item.name}}</button></nav><button class="secondary" :aria-expanded="advanced" @click="advanced=!advanced;if(!advanced&&['mcp','traces'].includes(section))section='apps'">{{advanced?'收起高级设置':'高级设置：外部工具与运行记录'}}</button>
   <p v-if="busy" class="studio-help" role="status">正在加载或保存，请稍候…</p>
   <div v-if="notice" class="studio-notice" role="status">{{notice}}<button @click="notice=''" aria-label="关闭提示"><X :size="14"/></button></div>
   <div v-if="provider==='mock'" class="studio-demo">当前为演示模型：工具可以真实测试；对话自动选择技能与工具需配置真实模型。</div>

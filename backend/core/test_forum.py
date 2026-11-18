@@ -246,3 +246,44 @@ class ForumTests(TestCase):
             response=self.tc.post(f'/api/forum/posts/{self.post.id}/drafts/',{},format='json')
         self.assertEqual(response.data['error_code'],'state_changed')
         self.assertEqual(response.data['body'],'');self.assertFalse(ForumReply.objects.exists())
+
+class ForumResolutionTests(TestCase):
+    setUp = ForumTests.setUp
+    client_for = ForumTests.client_for
+    def test_resolution_permissions_revision_and_reply_scope(self):
+        url=f'/api/forum/posts/{self.post.id}/'
+        reply=ForumReply.objects.create(post=self.post,author=self.peer,body='建议')
+        foreign=ForumPost.objects.create(course=self.other,author=self.out,title='外班',body='外班')
+        wrong=ForumReply.objects.create(post=foreign,author=self.out,body='外班答案')
+        self.assertEqual(self.pc.patch(url,{'resolved_reply_id':reply.id,'expected_revision':0},format='json').status_code,403)
+        self.assertEqual(self.sc.patch(url,{'resolved_reply_id':wrong.id,'expected_revision':0},format='json').status_code,400)
+        self.assertEqual(self.sc.patch(url,{'resolved_reply_id':True,'expected_revision':0},format='json').status_code,400)
+        self.assertEqual(self.sc.patch(url,{'resolved_reply_id':reply.id,'expected_revision':0},format='json').status_code,200)
+        self.post.refresh_from_db();self.assertEqual(self.post.resolved_reply_id,reply.id);self.assertIsNotNone(self.post.resolved_at)
+        self.assertEqual(self.tc.patch(url,{'resolved_reply_id':None,'expected_revision':0},format='json').status_code,409)
+        self.assertEqual(self.tc.patch(url,{'resolved_reply_id':None,'expected_revision':1},format='json').status_code,200)
+        self.post.refresh_from_db();self.assertIsNone(self.post.resolved_reply_id);self.assertIsNone(self.post.resolved_at)
+        self.assertEqual(self.oc.get(url).status_code,403)
+
+    def test_reply_search_filters_preserve_counts_anonymity_and_get_readonly(self):
+        for _ in range(2):ForumReply.objects.create(post=self.post,author=self.t,body='needle-answer',teacher_answer=True)
+        other=ForumPost.objects.create(course=self.other,author=self.out,title='needle-answer',body='hidden')
+        before=ForumPost.objects.count()
+        rows=self.sc.get(self.base+'posts/?q=needle-answer&status=answered').data['items']
+        self.assertEqual(len(rows),1);self.assertEqual(rows[0]['reply_count'],2)
+        self.assertEqual(rows[0]['author'],{'name':'匿名同学'});self.assertTrue(rows[0]['teacher_answered'])
+        self.assertEqual(self.sc.get(self.base+'posts/?status=resolved').data['items'],[])
+        self.assertEqual(self.sc.get(self.base+'posts/?status=bad').status_code,400)
+        self.assertEqual(ForumPost.objects.count(),before)
+        self.assertEqual(self.post.revision,0)
+
+    def test_author_role_and_relevance_search(self):
+        exact=ForumPost.objects.create(course=self.c,author=self.t,title='求导',body='教师原帖')
+        body=ForumPost.objects.create(course=self.c,author=self.s,title='另外的问题',body='求导',pinned=True)
+        reply_only=ForumPost.objects.create(course=self.c,author=self.s,title='回复匹配',body='正文')
+        ForumReply.objects.create(post=reply_only,author=self.t,body='求导')
+        rows=self.sc.get(self.base+'posts/?q=求导').data['items']
+        self.assertEqual([r['id'] for r in rows],[exact.id,body.id,reply_only.id])
+        rows=self.sc.get(self.base+'posts/?q=求导&author_role=teacher').data['items']
+        self.assertEqual([r['id'] for r in rows],[exact.id])
+        self.assertEqual(self.sc.get(self.base+'posts/?author_role=admin').status_code,400)

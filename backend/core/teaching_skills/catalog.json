@@ -258,5 +258,29 @@
     "version": "0.2.0",
     "license": "项目原创",
     "source_url": "https://github.com/Tiamstar/CampusClaw-Team/tree/codex/baseline-v0.1.0/backend/core/teaching_skills/academic-reading"
+  },
+  {
+    "id": "exam-bank",
+    "name": "试卷图文识别",
+    "category": "作业测评",
+    "icon": "▤",
+    "description": "上传试卷识别为可回查来源的图文题组草稿，由教师校对确认。",
+    "tool_refs": [],
+    "source": "CampusClaw 原创教学技能",
+    "source_url": "",
+    "version": "1.0.0",
+    "license": "Project license"
+  },
+  {
+    "id": "question-bank",
+    "name": "教师题库检索",
+    "category": "作业测评",
+    "icon": "▤",
+    "description": "检索自己的题库及原卷题目索引，辅助校对和选题。",
+    "tool_refs": [],
+    "source": "CampusClaw 原创教学技能",
+    "source_url": "",
+    "version": "1.0.0",
+    "license": "Project license"
   }
 ]

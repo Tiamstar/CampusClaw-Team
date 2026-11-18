@@ -384,6 +384,35 @@ def builtin_tool_registry():
             return await make_artifact(kind, arguments, context)
         return execute
 
+    async def bank_search(arguments,context):
+        def read():
+            from .exam_service import teacher,owned_questions
+            if not context.thread or not context.thread.course_id:raise PermissionError('题库工具需要课程对话')
+            try:teacher(context.user,context.thread.course_id)
+            except Exception:raise PermissionError('仅课程教师可检索自己的题库') from None
+            rows=owned_questions(context.user,context.thread.course_id)
+            query=arguments.get('query','').strip()
+            if query:rows=rows.filter(body__icontains=query)
+            offset=(arguments.get('page',1)-1)*10
+            from .quiz_service import question_snapshot
+            return [question_snapshot(q) for q in rows.select_related('group').prefetch_related('points').order_by('-id')[offset:offset+10]]
+        return await sync_to_async(read)()
+
+    async def source_index(arguments,context):
+        def read():
+            from .models import ExamSource
+            from .exam_service import own_source
+            if not context.thread or not context.thread.course_id:raise PermissionError('需要课程对话')
+            row=ExamSource.objects.filter(pk=arguments['source_id'],course_id=context.thread.course_id,owner=context.user).first()
+            if row is None:raise PermissionError('来源不存在或无权访问')
+            try:own_source(context.user,row)
+            except Exception:raise PermissionError('题库访问权限已撤销') from None
+            return {'source_id':row.id,'name':row.name,'status':row.status,'units':[{'id':u['id'],'label':u['label']} for u in row.units],'mapping':row.mapping}
+        return await sync_to_async(read)()
+
+    registry.register(ToolSpec('search_question_bank','1.0',{'type':'object','properties':{'query':{'type':'string','maxLength':200},'page':{'type':'integer','minimum':1,'maximum':10000}},'additionalProperties':False},{'type':'array'},'questionbank.read',True,False),bank_search)
+    registry.register(ToolSpec('get_exam_source_index','1.0',{'type':'object','properties':{'source_id':{'type':'integer','minimum':1}},'required':['source_id'],'additionalProperties':False},{'type':'object'},'questionbank.read',True,False),source_index)
+
     registry.register(ToolSpec("search_course_knowledge", "1.0",
         {"type": "object", "properties": {"query": {"type": "string"}, "mode": {"type": "string", "enum": ["keyword", "vector", "hybrid"]}}, "required": ["query"], "additionalProperties": False},
         {"type": "array"}, "course.read", True, False), search_course)
@@ -478,9 +507,13 @@ async def _traced_model_stream(messages, attachments=(), tools=()):
 
 
 async def _model_stream_impl(messages, attachments=(), tools=()):
-    provider = os.getenv("MODEL_PROVIDER", "mock").lower()
-    model = os.getenv("MODEL_NAME", "")
-    if provider == "mock" or not model:
+    provider = os.getenv("MODEL_PROVIDER", "mock").strip().lower()
+    model = os.getenv("MODEL_NAME", "").strip()
+    if provider not in {"mock", "openai", "anthropic"}:
+        raise RuntimeErrorWithStatus("MODEL_PROVIDER 须为 mock、openai 或 anthropic")
+    if provider != "mock" and not model:
+        raise RuntimeErrorWithStatus("未配置 MODEL_NAME")
+    if provider == "mock":
         await trace_record("llm_request", {"provider": "mock", "endpoint": None, "sent": False,
             "payload": {"model": model or "mock-local", "messages": messages, "tools": tools, "stream": True}})
         answer = "【演示模式，未调用真实模型】我已收到你的问题。配置课程模型网关后，我可以继续结合课程资料和附件生成回答。"
@@ -489,11 +522,11 @@ async def _model_stream_impl(messages, attachments=(), tools=()):
             yield token, model or "mock-local"
         return
     if provider == "anthropic":
-        base = os.getenv("MODEL_API_BASE", "https://api.anthropic.com").rstrip("/")
+        base = (os.getenv("MODEL_API_BASE", "").strip() or "https://api.anthropic.com").rstrip("/")
         key = os.getenv("ANTHROPIC_API_KEY") or os.getenv("MODEL_API_KEY", "")
         if not key:
             raise RuntimeErrorWithStatus("未配置 Anthropic API 密钥")
-        endpoint = base + "/v1/messages"
+        endpoint = base + ("/messages" if base.endswith("/v1") else "/v1/messages")
         anthropic_messages = []
         for row in messages:
             if row["role"] == "system":
@@ -524,11 +557,11 @@ async def _model_stream_impl(messages, attachments=(), tools=()):
         headers = {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
         parser = "anthropic"
     else:
-        base = os.getenv("MODEL_API_BASE", "").rstrip("/")
+        base = os.getenv("MODEL_API_BASE", "").strip().rstrip("/")
         key = os.getenv("MODEL_API_KEY", "")
         if not base or not key:
             raise RuntimeErrorWithStatus("未配置 OpenAI 兼容模型网关")
-        endpoint = base + "/chat/completions"
+        endpoint = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
         payload = {"model": model, "stream": True, "messages": messages, "stream_options": {"include_usage": True}}
         if tools:
             payload["tools"] = tools

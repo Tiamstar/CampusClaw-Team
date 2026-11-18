@@ -23,3 +23,25 @@ describe('published gradebook scope',()=>{
     expect(w.get('[role=alert]').text()).toContain('权限已撤回');w.unmount()
   })
 })
+
+it('validates enabled weights live and blocks invalid policy writes',async()=>{
+ vi.mocked(api).mockImplementation(async(path:string)=>{
+  if(path.endsWith('gradebook/'))return {current:{items:[],rows:[],policy_revision:0},snapshots:[]}
+  if(path.endsWith('grade-policy/'))return {revision:0,items:[]}
+  if(path.endsWith('assignments/'))return [{id:1,title:'作业一'},{id:2,title:'作业二'}]
+  return []
+ })
+ const w=mount(GradebookWorkspace,{props:{courseId:6,isTeacher:true}});await flushPromises()
+ for(const c of w.findAll('input[type=checkbox]'))await c.setValue(true)
+ const weights=w.findAll('input[type=number]')
+ await weights[0].setValue('33.33');await weights[1].setValue('66.66')
+ expect(w.text()).toContain('99.99%')
+ await w.get('form').trigger('submit');await flushPromises()
+ expect(vi.mocked(api).mock.calls.some(c=>c[1]==='PUT')).toBe(false)
+ await weights[1].setValue('66.67')
+ expect(w.text()).toContain('100.00% · 可保存')
+ expect(w.get('form button').attributes('disabled')).toBeUndefined()
+ await weights[1].setValue('66.667')
+ expect(w.get('form button').attributes('disabled')).toBeDefined()
+ w.unmount()
+})

@@ -1,7 +1,5 @@
 # 安全与交付
 
-> 2026-11-16本轮范围：用户将公网改为附加项，本地交付先行；容量/RPO/RTO/保留期未确定。见 [范围决定](../../../../../docs/delivery-scope.md)。下列完整课程Requirement保留，未执行不标通过，本轮本地交付不等待公网资源。
-
 ## ADDED Requirements
 
 ### Requirement: SEC-001 全链路隔离与最小权限

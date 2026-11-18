@@ -42,3 +42,20 @@ class CourseworkTask(models.Model):
         ]
         indexes = [models.Index(fields=['status', 'id'], name='coursework_queue'),
                    models.Index(fields=['course', 'finished_at'], name='coursework_course_end')]
+
+
+class WrongAnswerReview(models.Model):
+    STATUS_CHOICES = [('reviewing', '继续复习'), ('mastered', '已掌握')]
+    version = models.ForeignKey('core.SubmissionVersion', on_delete=models.CASCADE, related_name='wrong_answer_reviews')
+    student = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='wrong_answer_reviews')
+    item_id = models.CharField(max_length=120)
+    grade_revision = models.PositiveIntegerField()
+    revision = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='reviewing')
+    note = models.CharField(max_length=500, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['version', 'student', 'grade_revision', 'item_id'], name='unique_wrong_answer_review')]
+        indexes = [models.Index(fields=['student', 'status', 'updated_at'], name='wrong_review_student_status')]

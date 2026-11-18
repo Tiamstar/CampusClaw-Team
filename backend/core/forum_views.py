@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from functools import wraps
 from asgiref.sync import async_to_sync
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Exists, OuterRef, Case, When, Value, IntegerField
 from django.contrib.postgres.search import TrigramSimilarity
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -65,6 +65,8 @@ def post_data(post, user, teacher):
             'author':{'name':'匿名同学' if anonymous else post.author.display_name,
                       **({} if anonymous else {'id':post.author_id})},
             'is_mine':post.author_id==user.id, 'pinned':post.pinned,'featured':post.featured,
+            'resolved_reply_id':post.resolved_reply_id,'resolved_at':post.resolved_at,'revision':post.revision,
+            'teacher_answered':post.teacher_answered if hasattr(post,'teacher_answered') else post.replies.filter(teacher_answer=True).exists(),
             'created_at':post.created_at,
             'points':[{'id':p.id,'name':p.name} for p in post.points.all()],
             'mentions':[{'id':u.id,'name':u.display_name} for u in post.mentions.all()],
@@ -132,16 +134,29 @@ def posts(request,course_id):
     teacher=membership.role=='teacher'
     if request.method=='GET':
         offset,number=page(request)
-        rows=ForumPost.objects.filter(course_id=course_id).select_related('author').prefetch_related('points','mentions').annotate(reply_count=Count('replies'))
+        rows=ForumPost.objects.filter(course_id=course_id).select_related('author').prefetch_related('points','mentions').annotate(reply_count=Count('replies'),teacher_answered=Exists(ForumReply.objects.filter(post_id=OuterRef('pk'),teacher_answer=True)))
         query=request.GET.get('q','').strip()[:200]
         if query:
-            rows=rows.filter(Q(title__icontains=query)|Q(body__icontains=query))
+            rows=rows.annotate(reply_match=Exists(ForumReply.objects.filter(post_id=OuterRef('pk'),body__icontains=query))).filter(Q(title__icontains=query)|Q(body__icontains=query)|Q(reply_match=True))
+        author_role=request.GET.get('author_role','')
+        if author_role not in ('','teacher','student'):return fail('发布者角色无效')
+        if author_role:
+            rows=rows.filter(author_id__in=Membership.objects.filter(course_id=course_id,role=author_role).values('user_id'))
+        status=request.GET.get('status','')
+        if status not in ('','open','resolved','answered'):return fail('讨论状态无效')
+        if status=='open':rows=rows.filter(resolved_reply__isnull=True)
+        elif status=='resolved':rows=rows.filter(resolved_reply__isnull=False)
+        elif status=='answered':rows=rows.filter(teacher_answered=True)
         if request.GET.get('point'):
             try:
                 rows=rows.filter(points__id=int(request.GET['point']))
             except ValueError:
                 return fail('知识点无效')
-        batch=list(rows.order_by('-pinned','-created_at','-id')[offset:offset+21])
+        if query:
+            rows=rows.annotate(search_rank=Case(When(title__iexact=query,then=Value(4)),When(title__icontains=query,then=Value(3)),When(body__icontains=query,then=Value(2)),default=Value(1),output_field=IntegerField()))
+            rows=rows.order_by('-search_rank','-pinned','-created_at','-id')
+        else:rows=rows.order_by('-pinned','-created_at','-id')
+        batch=list(rows[offset:offset+21])
         return Response({'items':[post_data(p,request.user,teacher) for p in batch[:20]], 'next_page':number+1 if len(batch)>20 else None})
     if set(request.data)-{'title','body','anonymous','point_ids','mention_ids'}:
         return fail('包含不支持的发帖字段')
@@ -181,15 +196,30 @@ def post_detail(request,post_id):
     post=get_object_or_404(ForumPost.objects.select_related('author').prefetch_related('points','mentions'),pk=post_id)
     membership=access(request.user,post.course_id)
     if request.method=='PATCH':
-        access(request.user,post.course_id,True)
-        if not request.data or set(request.data)-{'pinned','featured'} or any(type(v) is not bool for v in request.data.values()):
-            return fail('治理选项无效')
-        with transaction.atomic():
-            post=ForumPost.objects.select_for_update().get(pk=post_id)
-            for key,value in request.data.items():
-                setattr(post,key,value)
-            post.save(update_fields=list(request.data))
-            audit(request,post,'moderate')
+        data=request.data
+        if 'resolved_reply_id' in data:
+            if set(data)-{'resolved_reply_id','expected_revision'}:return fail('解决状态字段无效')
+            if post.author_id!=request.user.id and membership.role!='teacher':raise PermissionDenied('仅提问者或任课教师可标记解决')
+            reply_id=data['resolved_reply_id']
+            if reply_id is not None and (type(reply_id) is not int or reply_id<=0):return fail('解决回复无效')
+            with transaction.atomic():
+                post=ForumPost.objects.select_for_update().get(pk=post_id)
+                if type(data.get('expected_revision')) is not int or data['expected_revision']!=post.revision:return fail('讨论已更新，请刷新后重试',409)
+                if reply_id is not None and not ForumReply.objects.filter(pk=reply_id,post_id=post_id).exists():return fail('解决回复不属于此讨论')
+                post.resolved_reply_id=reply_id
+                post.resolved_at=timezone.now() if reply_id else None
+                post.revision+=1
+                post.save(update_fields=['resolved_reply','resolved_at','revision'])
+                audit(request,post,'resolve' if reply_id else 'reopen')
+        else:
+            access(request.user,post.course_id,True)
+            if not data or set(data)-{'pinned','featured'} or any(type(v) is not bool for v in data.values()):return fail('治理选项无效')
+            with transaction.atomic():
+                post=ForumPost.objects.select_for_update().get(pk=post_id)
+                for key,value in data.items():setattr(post,key,value)
+                post.revision+=1
+                post.save(update_fields=[*data,'revision'])
+                audit(request,post,'moderate')
     return Response(post_data(post,request.user,membership.role=='teacher'))
 
 

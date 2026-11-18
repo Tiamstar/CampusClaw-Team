@@ -31,7 +31,7 @@ watch(()=>[props.threadId,props.refreshKey],load,{immediate:true})
 </script>
 
 <template>
-<section v-if="threadId" class="confirmations" aria-label="工具确认记录">
+<section v-if="threadId&&(rows.length||error)" class="confirmations" aria-label="工具确认记录">
   <div class="confirmation-head"><strong>工具确认记录</strong><button class="secondary" :disabled="loading||!!busy||disabled" @click="load">刷新</button></div>
   <p v-if="loading" role="status">正在读取确认记录…</p>
   <p v-if="error" role="alert">{{error}}</p>

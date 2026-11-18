@@ -14,15 +14,51 @@ def fingerprint(value):
 
 
 def question_snapshot(q):
-    return {'id':q.id,'revision':q.revision,'kind':q.kind,'body':q.body,'options':q.options,
-            'answer':q.answer,'explanation':q.explanation,'score':str(q.score),
+    result = {'id':q.id,'revision':q.revision,'kind':q.kind,'body':q.body,'options':q.options,
+            'answer':q.answer,'explanation':q.explanation,'score':str(q.score) if q.score is not None else None,
             'points':[{'id':p.id,'name':p.name,'revision':p.revision} for p in q.points.all()]}
+    from .exam_service import asset_ids
+    material=q.group.material if q.group_id else ''
+    if q.group_id:
+        result['group']={'id':q.group_id,'title':q.group.title,'material':material,'revision':q.group.revision}
+    if q.source_id:result.update(source_id=q.source_id,source_units=q.source_units)
+    public=asset_ids(q.body,material,*q.options);solution=asset_ids(q.explanation,*q.answer['values'])
+    if public:result['public_asset_ids']=public
+    if solution:result['solution_asset_ids']=solution
+    return result
 
 
 def paper(quiz):
+    if quiz.question_ids:
+        from .models import Course
+        from .exam_service import owned_questions
+        Course.objects.select_for_update().get(pk=quiz.course_id)
+        owner=quiz.owner or quiz.course.created_by
+        rows=list(owned_questions(owner,quiz.course_id).filter(id__in=quiz.question_ids,active=True).select_for_update(of=('self',)).select_related('group').prefetch_related('points'))
+        by_id={q.id:q for q in rows}
+        if len(by_id)!=len(quiz.question_ids):raise ValueError('所选题目不存在、停用或不属于测验所有者')
+        selected=[by_id[i] for i in quiz.question_ids]
+        groups={q.group_id for q in selected if q.group_id}
+        for gid in groups:
+            group=next(q.group for q in selected if q.group_id==gid)
+            if not group.active:raise ValueError('所选题组已停用')
+            all_ids=list(group.questions.order_by('position','id').values_list('id',flat=True))
+            chosen=[q.id for q in selected if q.group_id==gid]
+            start=quiz.question_ids.index(chosen[0])
+            if chosen!=all_ids or quiz.question_ids[start:start+len(chosen)]!=chosen:
+                raise ValueError('必须按原顺序选取完整题组，不能拆散或打乱子题')
+        result=[question_snapshot(q) for q in selected]
+        for item in result:
+            value=quiz.question_scores.get(str(item['id']))
+            try:score=Decimal(value)
+            except Exception:raise ValueError('请为固定试卷每道题设置有效分值') from None
+            if not score.is_finite() or not 0<score<=Decimal('99999.99'):raise ValueError('试卷分值无效')
+            item['score']=str(score)
+        return result
     selected=[];used=set()
     for rule in quiz.rules:
-        candidates=Question.objects.filter(course_id=quiz.course_id,active=True,kind=rule['kind']).exclude(id__in=used)
+        from .exam_service import owned_questions
+        candidates=owned_questions(quiz.owner or quiz.course.created_by,quiz.course_id).filter(active=True,kind=rule['kind'],group__isnull=True,score__isnull=False).exclude(id__in=used)
         if rule.get('point_id'):
             candidates=candidates.filter(points__id=rule['point_id'])
         pool=list(candidates.select_for_update().prefetch_related('points').order_by('id'))
@@ -61,7 +97,7 @@ def objective_grade(attempt):
     scores={}
     for q in attempt.snapshot:
         value=attempt.answers.get(str(q['id']))
-        if q['kind']=='short':scores[str(q['id'])]=None;continue
+        if q['kind']=='short' or not q['answer']['values']:scores[str(q['id'])]=None;continue
         expected=q['answer']['values']
         if q['kind']=='multiple':correct=isinstance(value,list) and set(value)==set(expected)
         elif q['kind']=='blank':correct=isinstance(value,str) and value.strip() in expected
@@ -101,7 +137,7 @@ def expire_attempts():
 
 def attempt_data(attempt,teacher=False):
     released=teacher or (attempt.status=='submitted' and timezone.now()>=attempt.quiz.answers_at)
-    paper_data=[q if released else {k:v for k,v in q.items() if k not in {'answer','explanation'}} for q in attempt.snapshot]
+    paper_data=[q if released else {k:v for k,v in q.items() if k not in {'answer','explanation','solution_asset_ids'}} for q in attempt.snapshot]
     data={'id':attempt.id,'quiz_id':attempt.quiz_id,'student_id':attempt.student_id,'number':attempt.number,
           'status':attempt.status,'paper':paper_data,'snapshot_hash':attempt.snapshot_hash,'answers':attempt.answers,
           'answer_revision':attempt.answer_revision,'saved_at':attempt.saved_at,'started_at':attempt.started_at,

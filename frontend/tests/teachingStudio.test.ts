@@ -34,6 +34,7 @@ it('binds recommended teaching skills without publishing private uploads', async
   const saved = setup()
   const wrapper = mount(AssistantStudio, { props: { courseId: 1, threadId: null } })
   await flushPromises()
+  await wrapper.findAll('.studio-nav button').find(b=>b.text()==='技能广场')!.trigger('click')
   expect(wrapper.findAll('option').map(option => option.text())).toContain('教学来源')
   await wrapper.get('.studio-nav button').trigger('click')
   await wrapper.get('.studio-app').trigger('click')

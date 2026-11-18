@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {ref,onMounted} from 'vue'
 import {api,openProtected,type Member} from './api'
+import WorkspaceSkeleton from './WorkspaceSkeleton.vue'
 import './forum.css'
 type Claim={point_id:number;finding:string;recommendation:string;refs:string[]}
 type ReportContent={claims:Claim[];limitations:string;window:{start:string;end:string};basis_version:string;point_names:Record<number,string>;metrics:{id:number;name:string;mastery:string|null;sample_size:number}[];evidence:Record<string,{attempt_id:number;question_id:number;score:string;maximum:string;grade_revision:number}>}
@@ -26,7 +27,7 @@ function point(p:Report,id:number){return p.version?.content.point_names[id]||'#
 onMounted(async()=>{await run(async()=>{await refresh();if(props.isTeacher){students.value=(await api<Member[]>(`courses/${props.courseId}/members/`)).filter(m=>m.role==='student');student.value=students.value.length?String(students.value[0].id):''}});loading.value=false})
 </script>
 <template>
-<section class="forum-workspace diagnostic-workspace"><div class="section-head"><div><h2>学情诊断报告</h2><p>报告建议不改变正式成绩。教师逐条复核并发布后，学生才能查看本人报告。</p></div><button class="secondary" :disabled="busy" @click="run(refresh)">刷新报告</button></div><p v-if="loading" role="status">正在加载诊断报告…</p><p v-if="error" role="alert" class="error">{{error}}</p><p v-if="notice" role="status">{{notice}}</p>
+<section class="forum-workspace diagnostic-workspace"><div class="section-head"><div><h2>学情诊断报告</h2><p>报告建议不改变正式成绩。教师逐条复核并发布后，学生才能查看本人报告。</p></div><button class="secondary" :disabled="busy" @click="run(refresh)">刷新报告</button></div><p v-if="loading" role="status">正在加载诊断报告…</p><WorkspaceSkeleton kind="table" v-if="loading"/><p v-if="error" role="alert" class="error">{{error}}</p><p v-if="notice" role="status">{{notice}}</p>
 <template v-if="isTeacher"><article class="forum-card"><h3>学情诊断技能</h3><p>{{config.enabled?'已启用':'已停用'}} · learning-diagnosis@1.0.0</p><button class="secondary" :disabled="busy" @click="toggle">{{config.enabled?'停用诊断技能':'启用诊断技能'}}</button></article><form class="forum-card diagnostic-form" @submit.prevent="create"><label>目标学生<select v-model="student" required><option value="">请选择学生</option><option v-for="s in students" :key="s.id" :value="String(s.id)">{{s.name||'学生 #'+s.id}}</option></select></label><label>开始日期（UTC）<input v-model="start" type="date" required></label><label>结束日期（UTC，不含当日）<input v-model="end" type="date" required></label><p>仅使用目标学生的已公开正式评分、已批准图谱和当前成绩策略。答案公开前不分析作答文本，无评分证据不作诊断。</p><button class="primary" :disabled="busy||!student||!config.enabled">生成诊断草稿</button></form></template>
 <p v-if="!loading&&!reports.length&&!error">{{isTeacher?'暂无本人发起的诊断任务。':'暂无向本人发布的有效诊断报告。'}}</p>
 <article v-for="p in reports" :key="p.id" class="forum-card"><h3>报告 #{{p.id}} · {{p.student_name}} · {{labels[p.status]||p.status}}</h3><p v-if="p.status==='running'">当前步骤：{{labels[p.phase]||p.phase}}，可取消任务。</p><p v-if="p.status==='queued'">已进入持久化队列，稍后刷新查看。</p><p v-if="p.error" class="error" role="alert">{{p.error}}</p><p v-if="p.stale" class="error" role="alert">评分、作答公开状态、图谱或资料已变化。旧说明和导出已隐藏，请重新生成。</p>

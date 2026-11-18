@@ -19,6 +19,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from .agent_runtime import (RuntimeErrorWithStatus, ToolContext, attachment_prompt, builtin_tool_registry, model_tools,
                             create_artifact, event, index_material, model_stream, require_course_member, search)
 from .models import AgentArtifact, AgentAttachment, AgentMessage, AgentRun, AgentThread, KnowledgeEntry, Material
+from .models import Membership
 from .agent_runtime import trace_sink
 from .html_artifacts import extract_html, save_html_artifact
 
@@ -343,6 +344,8 @@ def agent_stream(request, thread_id):
             permissions = {"artifact.create"}
             if thread.course_id:
                 permissions.add("course.read")
+                if await sync_to_async(Membership.objects.filter(course_id=thread.course_id,user=user,role='teacher').exists)():
+                    permissions.add('questionbank.read')
             context = ToolContext(user, thread, frozenset(permissions), request.request_id, config.revision if config else None)
             descriptions = configure_registry(registry, selected_skills, mcp_tools)
             if selected_skills:
@@ -595,6 +598,8 @@ def execute_tool(request, tool_name):
     permissions = {"artifact.create"}
     if thread.course_id and require_course_member(request.user, thread.course_id):
         permissions.add("course.read")
+        if Membership.objects.filter(course_id=thread.course_id,user=request.user,role='teacher').exists():
+            permissions.add('questionbank.read')
     context = ToolContext(request.user, thread, frozenset(permissions), request.request_id)
     try:
         result = async_to_sync(builtin_tool_registry().execute)(tool_name, data.get("arguments") or {}, context)

@@ -1,0 +1,5 @@
+<script setup lang="ts">
+withDefaults(defineProps<{kind?:'cards'|'table'|'list';label?:string}>(),{label:'正在加载内容'})
+</script>
+<template><div class="workspace-skeleton" :class="`skeleton-${kind||'cards'}`" role="status" :aria-label="label"><span class="sr-only">{{label}}</span><i v-for="n in (kind==='table'?3:kind==='list'?5:4)" :key="n"/></div></template>
+<style scoped>.workspace-skeleton{display:grid;gap:12px;margin:16px 0}.workspace-skeleton i{display:block;height:72px;border-radius:10px;background:linear-gradient(90deg,#eef2f5 25%,#f8fafc 37%,#eef2f5 63%);background-size:400% 100%;animation:skeleton-shimmer 1.3s ease infinite}.skeleton-table{grid-template-columns:repeat(3,minmax(0,1fr))}.skeleton-table i{height:140px}.skeleton-list i{height:42px}@keyframes skeleton-shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(prefers-reduced-motion:reduce){.workspace-skeleton i{animation:none}}@media(max-width:600px){.skeleton-table{grid-template-columns:1fr}.skeleton-table i{height:65px}}</style>

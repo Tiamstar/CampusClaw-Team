@@ -26,7 +26,7 @@ async function otherAction(url:string, name?:string) {
 </script>
 
 <template>
-  <div v-if="usedTools.length" class="used-tools"><span v-for="(tool,index) in usedTools" :key="index">{{tool.status==='ok'?'✓':tool.status==='pending'?'…':'!'}} {{tool.name}}<small v-if="tool.status==='pending'"> · 已请求确认，结果见确认记录</small><small v-else-if="tool.status!=='ok'"> · 未成功</small></span></div>
+  <details v-if="usedTools.length" class="tool-details"><summary>查看处理记录</summary><div class="used-tools"><span v-for="(tool,index) in usedTools" :key="index">{{tool.status==='ok'?'✓':tool.status==='pending'?'…':'!'}} {{tool.name}}<small v-if="tool.status==='pending'"> · 已请求确认，结果见确认记录</small><small v-else-if="tool.status!=='ok'"> · 未成功</small></span></div></details>
   <div v-if="presentation.display" class="markdown-body" v-html="renderMarkdown(presentation.display)"></div>
   <div v-for="file in presentation.files" :key="file.key" class="html-file-card">
     <button class="html-file-open" @click="emit('open', file)">

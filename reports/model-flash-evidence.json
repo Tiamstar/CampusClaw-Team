@@ -1,0 +1,120 @@
+{
+  "executor": "Codex",
+  "transport": "APIClient server views and real model gateway; not browser or independent acceptance",
+  "course_id": 6,
+  "cases": [
+    {
+      "format": "txt",
+      "source_id": 5,
+      "status": "failed",
+      "units": 1,
+      "groups": 0,
+      "questions": 0,
+      "model": "",
+      "missing_answer_keys": 0,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "error": "识别失败，请检查文件或模型视觉能力后重试；也可人工整理",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "png",
+      "source_id": 6,
+      "status": "ready",
+      "units": 1,
+      "groups": 1,
+      "questions": 2,
+      "model": "deepseek-v4.1-flash",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "docx",
+      "source_id": 7,
+      "status": "ready",
+      "units": 1,
+      "groups": 2,
+      "questions": 4,
+      "model": "deepseek-v4.1-flash",
+      "missing_answer_keys": 4,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "pdf",
+      "source_id": 8,
+      "status": "failed",
+      "units": 1,
+      "groups": 0,
+      "questions": 0,
+      "model": "",
+      "missing_answer_keys": 0,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "error": "识别失败，请检查文件或模型视觉能力后重试；也可人工整理",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    }
+  ],
+  "configuration": {
+    "provider": "openai",
+    "base_url": "https://1pkapi.com/v1",
+    "model": "deepseek-v4.1-flash",
+    "key_in_ignored_env": true
+  },
+  "retry_runs": [
+    {
+      "source_id": 5,
+      "status": "failed",
+      "questions": 0,
+      "model": "",
+      "missing_answer_keys": 0,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "retained": true
+    },
+    {
+      "source_id": 8,
+      "status": "ready",
+      "questions": 2,
+      "model": "deepseek-v4.1-flash",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "retained": true
+    },
+    {
+      "source_id": 5,
+      "status": "ready",
+      "questions": 2,
+      "model": "deepseek-v4.1-flash",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "retained": true
+    }
+  ],
+  "tool_stream_test": {
+    "complete": true,
+    "model": "deepseek-v4.1-flash",
+    "tool": "lookup_question",
+    "arguments": {
+      "query": "geometry"
+    },
+    "tool_executed": false
+  },
+  "review": {
+    "docx": "4 questions across 2 groups; text includes Word block locator prefixes permitted by the extraction skill. Teacher may remove them.",
+    "initial_failures": "TXT and PDF failed, controlled status retained; exact upstream cause not established. Diagnostic direct TXT recognize later succeeded but did not change persisted task status.",
+    "scope": "Synthetic fixtures, no independent acceptance or arbitrary-paper correctness claim.",
+    "final_status": "Sources 5/6/7/8 ready: TXT 2, PNG 2, DOCX 4, PDF 2. Earlier failures retained in logs; TXT last call took about 150 seconds. No stability or fidelity guarantee."
+  }
+}

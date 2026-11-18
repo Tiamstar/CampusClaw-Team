@@ -105,3 +105,31 @@ class HomeworkTests(TestCase):
                 self.assertNotIn(b'<script>',response.content); self.assertIn(b'&lt;script&gt;',response.content)
             if getattr(response,'file_to_stream',None): response.file_to_stream.close()
             self.assertEqual(self.pc.get(url).status_code,403)
+
+    def test_global_grading_queue_only_teacher_courses_and_latest_ungraded(self):
+        first=self.submit(text_content='first').data['id']
+        latest=self.submit(text_content='second').data['id']
+        url='/api/grading-queue/'
+        self.assertEqual(self.sc.get(url).data['items'],[])
+        items=self.tc.get(url).data['items']
+        self.assertEqual([i['version_id'] for i in items],[latest])
+        self.assertNotIn('email',items[0])
+        self.assertEqual(self.grade(latest).status_code,200)
+        self.assertEqual(self.tc.get(url).data['items'],[])
+        Membership.objects.filter(course=self.course,user=self.teacher).delete()
+        self.assertEqual(self.tc.get(url).data['items'],[])
+        self.assertEqual(self.tc.get(url+'?page=0').status_code,400)
+
+    def test_grading_queue_quiz_scope_excludes_in_progress_and_finalized(self):
+        from .models import Quiz,QuizAttempt
+        now=timezone.now()
+        q=Quiz.objects.create(course=self.course,title='测验',opens_at=now,closes_at=now+timedelta(hours=1),answers_at=now)
+        a=QuizAttempt.objects.create(quiz=q,student=self.student,number=1,deadline=now,status='submitted',submitted_at=now,snapshot_hash='hash')
+        url='/api/grading-queue/?kind=quiz'
+        self.assertEqual(self.tc.get(url).data['items'][0]['attempt_id'],a.pk)
+        self.assertEqual(self.sc.get(url).data['items'],[])
+        a.grading_status='finalized';a.save()
+        self.assertEqual(self.tc.get(url).data['items'],[])
+        a.grading_status='pending';a.status='in_progress';a.save()
+        self.assertEqual(self.tc.get(url).data['items'],[])
+        self.assertEqual(self.tc.get('/api/grading-queue/?kind=bad').status_code,400)

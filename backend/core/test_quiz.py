@@ -41,6 +41,49 @@ class QuizTests(TestCase):
     def save(self,a,answers=None,rev=0,key='save1'):
         return self.sc.put(f"/api/quiz-attempts/{a['id']}/answers/",{'answers':answers if answers is not None else self.correct(),'expected_revision':rev,'key':key},format='json')
 
+    def test_question_comparison_and_revision_checked_partial_grading(self):
+        a = self.start()
+        self.save(a)
+        self.sc.post(f"/api/quiz-attempts/{a['id']}/submit/", {}, format='json')
+        anchor = QuizAttempt.objects.get(pk=a['id'])
+        peer = QuizAttempt.objects.create(quiz=self.quiz, student=self.peer, number=1, status='submitted',
+            snapshot=anchor.snapshot, snapshot_hash=anchor.snapshot_hash, answers={}, scores=anchor.scores,
+            deadline=anchor.deadline, submitted_at=timezone.now(), grade_revision=1)
+        # Same question IDs with a different frozen paper must not be merged.
+        QuizAttempt.objects.create(quiz=self.quiz, student=self.peer, number=2, status='submitted',
+            snapshot=anchor.snapshot, snapshot_hash='different', answers={}, scores={}, deadline=anchor.deadline)
+        qid = self.q[-1]['id']
+        url = f"/api/quiz-attempts/{a['id']}/comparison/?question_id={qid}"
+        before = QuizGradeRevision.objects.count()
+        result = self.tc.get(url)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual({r['attempt_id'] for r in result.data['items']}, {anchor.id, peer.id})
+        self.assertNotIn('email', str(result.data))
+        self.assertEqual(QuizGradeRevision.objects.count(), before)
+        self.assertEqual(self.sc.get(url).status_code, 403)
+        self.assertEqual(self.tc.get(url.replace(str(qid), '999999')).status_code, 400)
+        self.assertEqual(self.tc.get(url+'&page=0').status_code, 400)
+        endpoint = f"/api/quiz-attempts/{a['id']}/questions/{qid}/review/"
+        payload = {'score': '8.50', 'feedback': '步骤正确', 'reason': '已逐题核对', 'expected_revision': 1}
+        self.assertEqual(self.sc.post(endpoint, payload, format='json').status_code, 403)
+        self.assertEqual(self.tc.post(endpoint, {**payload, 'score': '11'}, format='json').status_code, 400)
+        self.assertEqual(self.tc.post(endpoint, {**payload, 'score': 'NaN'}, format='json').status_code, 400)
+        self.assertEqual(self.tc.post(endpoint, {**payload, 'feedback': 'x'*5001}, format='json').status_code, 400)
+        Quiz.objects.filter(pk=self.quiz.id).update(grades_published=True)
+        result = self.tc.post(endpoint, payload, format='json')
+        self.assertEqual(result.status_code, 200)
+        anchor.refresh_from_db(); self.quiz.refresh_from_db()
+        self.assertEqual(anchor.scores[str(qid)], '8.50')
+        self.assertEqual({k:v for k,v in anchor.scores.items() if k != str(qid)},
+                         {k:v for k,v in peer.scores.items() if k != str(qid)})
+        self.assertEqual(anchor.grading_status, 'finalized')
+        self.assertFalse(self.quiz.grades_published)
+        self.assertEqual(self.tc.post(endpoint, payload, format='json').status_code, 409)
+        self.assertEqual(anchor.grade_history.latest('revision').reason, '已逐题核对')
+        Membership.objects.filter(course=self.c, user=self.t).delete()
+        self.assertEqual(self.tc.get(url).status_code, 403)
+        self.assertEqual(self.tc.post(endpoint, {**payload, 'expected_revision': 2}, format='json').status_code, 403)
+
     def test_snapshot_survives_question_edit_and_no_answer_leak(self):
         a=self.start();self.assertTrue(all('answer' not in q and 'explanation' not in q for q in a['paper']))
         self.assertNotIn('scores',a)

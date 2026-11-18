@@ -32,3 +32,12 @@ describe('authentication during backend recovery',()=>{
     expect(auth.hasStoredAuth()).toBe(true)
   })
 })
+
+it('clears private assembly selections on logout without touching unrelated storage',async()=>{
+ const auth=await import('../src/auth')
+ sessionStorage.setItem('campusclaw.assembly.1.6','draft')
+ sessionStorage.setItem('unrelated','keep')
+ auth.clearTokens()
+ expect(sessionStorage.getItem('campusclaw.assembly.1.6')).toBeNull()
+ expect(sessionStorage.getItem('unrelated')).toBe('keep')
+})

@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import AssignmentWorkspace from '../src/AssignmentWorkspace.vue'
 import FilePreview from '../src/FilePreview.vue'
 import { api, protectedText } from '../src/api'
+import { confirmReviewNotesLeave, hasUnsavedReviewNotes } from '../src/unsavedReviewNotes'
 vi.mock('../src/api',()=>({api:vi.fn(),download:vi.fn(),protectedText:vi.fn(),protectedObjectUrl:vi.fn()}))
 afterEach(()=>vi.resetAllMocks())
 const assignment={id:1,title:'Homework',description:'Task',max_score:'100',due_at:'2099-01-01T00:00:00Z',allow_late:false,allowed_extensions:[],max_file_size_mb:50,submission_limits:{max_files:10,max_total_bytes:52428800,max_text_length:50000},my_versions:[],submission_status:'unsubmitted'}
@@ -43,4 +44,54 @@ it('offers original download when preview parsing fails',async()=>{
   vi.mocked(protectedText).mockRejectedValue(new Error('无法解析文件内容'))
   const view=mount(FilePreview,{props:{file:{id:1,name:'broken.docx',size:10,created_at:'',download_url:'/download',preview_kind:'document',preview_supported:true}}})
   await flushPromises(); expect(document.body.textContent).toContain('无法在线预览');expect(document.body.textContent).toContain('下载原文件');view.unmount()
+})
+
+it('opens the requested student and refuses silently falling back to a different answer',async()=>{
+ vi.mocked(api).mockImplementation(async(path)=>{
+  if(path.endsWith('submissions/'))return [2,4].map(id=>({student:{id,name:'学生'+id,email:''},status:'submitted',versions:[{id:id+10,number:1,text_content:'答案'+id,files:[],status:'submitted',grading_revision:0,grade:null}]})) as any
+  if(path.includes('settings'))return {grading_enabled:true,explanation_enabled:true}
+  if(path.includes('ai-tasks'))return []
+  return assignment as any
+ })
+ const w=mount(AssignmentWorkspace,{props:{assignmentId:1,isTeacher:true,initialStudentId:4}});await flushPromises()
+ expect(w.text()).toContain('答案4')
+ await w.setProps({initialStudentId:99});await flushPromises()
+ expect(w.text()).toContain('不会自动打开其他学生的答卷')
+ expect(w.find('.homework-grade-form').exists()).toBe(false)
+ await w.setProps({initialStudentId:2});await flushPromises()
+ expect(w.text()).toContain('答案2');w.unmount()
+})
+
+it('protects grading drafts on switching, refresh and leaving, retaining failed saves',async()=>{
+ const confirm=vi.spyOn(window,'confirm').mockReturnValue(false)
+ vi.mocked(api).mockImplementation(async(path,method)=>{
+  if(method==='POST')throw new Error('保存失败')
+  if(path.endsWith('submissions/'))return [2,4].map(id=>({student:{id,name:'学生'+id,email:''},status:'submitted',versions:[{id:id+10,number:1,text_content:'答案'+id,files:[],status:'submitted',grading_revision:0,grade:null}]})) as any
+  if(path.includes('settings'))return {grading_enabled:true,explanation_enabled:true}
+  if(path.includes('ai-tasks'))return []
+  return assignment as any
+ })
+ const w=mount(AssignmentWorkspace,{props:{assignmentId:1,isTeacher:true}});await flushPromises()
+ expect(hasUnsavedReviewNotes()).toBe(false)
+ await w.get('[aria-label="作业分数"]').setValue('82')
+ await w.get('.homework-grade-form textarea').setValue('保留步骤分')
+ expect(confirmReviewNotesLeave()).toBe(false)
+ expect(confirm).toHaveBeenLastCalledWith(expect.stringContaining('批改尚未保存'))
+ await w.findAll('.homework-student')[1]!.trigger('click');await flushPromises()
+ expect(w.text()).toContain('学生2的作业')
+ vi.mocked(api).mockClear()
+ await w.findAll('button').find(b=>b.text().includes('刷新状态'))!.trigger('click');await flushPromises()
+ expect(api).not.toHaveBeenCalled()
+ await w.get('.homework-grade-form').trigger('submit');await flushPromises()
+ expect(w.text()).toContain('保存失败')
+ expect((w.get('[aria-label="作业分数"]').element as HTMLInputElement).value).toBe('82')
+ expect((w.get('.homework-grade-form textarea').element as HTMLTextAreaElement).value).toBe('保留步骤分')
+ const event=new Event('beforeunload',{cancelable:true});window.dispatchEvent(event);expect(event.defaultPrevented).toBe(true)
+ await w.get('[aria-label="作业分数"]').setValue('');await w.get('.homework-grade-form textarea').setValue('')
+ expect(hasUnsavedReviewNotes()).toBe(false)
+ await w.get('[aria-label="作业分数"]').setValue('75')
+ confirm.mockReturnValue(true)
+ await w.findAll('.homework-student')[1]!.trigger('click');await flushPromises()
+ expect(w.text()).toContain('学生4的作业');expect(hasUnsavedReviewNotes()).toBe(false)
+ w.unmount();expect(hasUnsavedReviewNotes()).toBe(false);confirm.mockRestore()
 })

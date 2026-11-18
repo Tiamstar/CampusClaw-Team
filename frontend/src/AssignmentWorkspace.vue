@@ -2,15 +2,16 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronLeft, Upload, X, RefreshCw, Check, Eye, EyeOff } from 'lucide-vue-next'
 import FileCard from './FileCard.vue'
+import { registerReviewNotes } from './unsavedReviewNotes'
 import CourseworkAI from './CourseworkAI.vue'
 import { api, type Assignment, type FileInfo, type Submission, type SubmissionStatus, type Version, type ReviewedItem } from './api'
 
-const props = defineProps<{assignmentId:number;isTeacher:boolean}>()
+const props = defineProps<{assignmentId:number;isTeacher:boolean;initialStudentId?:number}>()
 const emit = defineEmits<{back:[];preview:[file:FileInfo]}>()
 const assignment = ref<Assignment|null>(null), roster = ref<Submission[]>([])
 const loading = ref(true), busy = ref(false), error = ref(''), notice = ref('')
 const answer = ref(''), attachments = ref<File[]>([]), submissionKey = ref('')
-const activeStudent = ref<number|null>(null), filter = ref('all')
+const activeStudent = ref<number|null>(props.initialStudentId??null), filter = ref('all')
 const aiSelection = ref<{task_id:number;items:ReviewedItem[]}|null>(null)
 function adoptAI(value:{task_id:number;items:ReviewedItem[]}|null){aiSelection.value=value;if(value){score.value=(value.items.reduce((n,r)=>n+Math.round(Number(r.score)*100),0)/100).toFixed(2);feedback.value=value.items.map(r=>r.title+'：'+r.feedback).join('\n')}}
 const score = ref<string|number>(''), feedback = ref(''), reason = ref(''), publish = ref(false)
@@ -30,14 +31,28 @@ const canSubmit = computed(() => !!assignment.value && (!deadlinePassed.value ||
 const accept = computed(() => assignment.value?.allowed_extensions.map(value => '.'+value).join(',') || undefined)
 const totalBytes = computed(() => attachments.value.reduce((sum,file) => sum+file.size,0))
 
+const gradeBaseline=ref('')
+const gradeSnapshot=()=>JSON.stringify([String(score.value),feedback.value,reason.value,publish.value,aiSelection.value])
+const gradeDirty=computed(()=>props.isTeacher&&!!latest.value&&(busy.value||gradeSnapshot()!==gradeBaseline.value))
+const gradeWarning='批改尚未保存，继续会丢失分数、评语或逐项复核修改。确定继续？'
+const unregisterGrade=registerReviewNotes(()=>gradeDirty.value,gradeWarning)
+function confirmGradeLeave(){return !gradeDirty.value||window.confirm(gradeWarning)}
+function selectStudent(id:number){if(id!==activeStudent.value&&confirmGradeLeave())activeStudent.value=id}
+async function refresh(){if(confirmGradeLeave())await load()}
+function beforeUnload(event:BeforeUnloadEvent){if(gradeDirty.value){event.preventDefault();event.returnValue=''}}
+window.addEventListener('beforeunload',beforeUnload)
+onBeforeUnmount(()=>{unregisterGrade();window.removeEventListener('beforeunload',beforeUnload)})
+
 function fillGrade() {
   aiSelection.value = null
   score.value = latest.value?.grade?.score ?? ''
   feedback.value = latest.value?.grade?.feedback || ''
   publish.value = latest.value?.grade_published || false
   reason.value = ''
+  gradeBaseline.value=gradeSnapshot()
 }
 watch(latest,fillGrade)
+watch(()=>props.initialStudentId,id=>{if(!props.isTeacher)return;activeStudent.value=roster.value.some(row=>row.student.id===id)?id!:null;if(id&&activeStudent.value===null)notice.value='目标学生已不可访问，请从名单中重新选择；不会自动打开其他学生的答卷。'})
 async function load() {
   loading.value = true; error.value = ''
   try {
@@ -46,7 +61,10 @@ async function load() {
       props.isTeacher ? api<Submission[]>(`assignments/${props.assignmentId}/submissions/`) : Promise.resolve([]),
     ])
     assignment.value = detail; roster.value = rows
-    if (!rows.some(row => row.student.id === activeStudent.value)) activeStudent.value = rows[0]?.student.id ?? null
+    if (!rows.some(row => row.student.id === activeStudent.value)){
+      if(props.initialStudentId){activeStudent.value=null;notice.value='目标学生已不可访问，请从名单中重新选择；不会自动打开其他学生的答卷。'}
+      else activeStudent.value=rows[0]?.student.id??null
+    }
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '加载作业失败' }
   finally { loading.value = false }
 }
@@ -87,7 +105,7 @@ async function submit() {
   })
 }
 async function beginReview() {
-  if (!latest.value) return
+  if (!latest.value||!confirmGradeLeave()) return
   await action(async () => {
     await api(`submission-versions/${latest.value!.id}/review/`,'POST')
     await load(); notice.value = '已进入批改，学生端显示待批改'
@@ -106,7 +124,7 @@ async function saveGrade() {
   })
 }
 async function setPublication(published:boolean) {
-  if (!latest.value?.grade) return
+  if (!latest.value?.grade||!confirmGradeLeave()) return
   await action(async () => {
     await api(`submission-versions/${latest.value!.id}/publication/`,'POST',{
       published, expected_revision:latest.value!.grading_revision || 0,
@@ -119,7 +137,7 @@ onMounted(load)
 
 <template>
   <div class="homework-workspace">
-    <div class="homework-toolbar"><button class="back" @click="emit('back')"><ChevronLeft :size="17"/>返回作业列表</button><button class="secondary" :disabled="busy||loading" @click="load"><RefreshCw :size="15"/>刷新状态</button></div>
+    <div class="homework-toolbar"><button class="back" @click="emit('back')"><ChevronLeft :size="17"/>返回作业列表</button><button class="secondary" :disabled="busy||loading" @click="refresh"><RefreshCw :size="15"/>刷新状态</button></div>
     <p v-if="error" class="homework-alert error" role="alert">{{error}}</p>
     <p v-if="notice" class="homework-alert" role="status">{{notice}}</p>
     <div v-if="loading" class="pane" role="status">正在加载作业…</div>
@@ -157,7 +175,7 @@ onMounted(load)
       <div v-else class="homework-teacher-layout">
         <aside class="pane homework-roster"><h3>学生作业 <span class="count">{{roster.length}}</span></h3>
           <select v-model="filter" aria-label="筛选提交状态"><option value="all">全部状态</option><option v-for="(label,status) in labels" :key="status" :value="status">{{label}}（{{roster.filter(row=>row.status===status).length}}）</option></select>
-          <button v-for="row in visibleStudents" :key="row.student.id" class="homework-student" :class="{active:row.student.id===activeStudent}" :disabled="busy" @click="activeStudent=row.student.id"><strong>{{row.student.name}}</strong><small>{{row.student.email}}</small><span class="homework-status" :class="row.status">{{labels[row.status]}}</span></button>
+          <button v-for="row in visibleStudents" :key="row.student.id" class="homework-student" :class="{active:row.student.id===activeStudent}" :disabled="busy" @click="selectStudent(row.student.id)"><strong>{{row.student.name}}</strong><small>{{row.student.email}}</small><span class="homework-status" :class="row.status">{{labels[row.status]}}</span></button>
           <p v-if="!visibleStudents.length" class="muted">{{roster.length?'该状态下暂无学生':'暂无学生加入课程'}}</p>
         </aside>
         <section class="pane homework-review"><template v-if="student"><h3>{{student.student.name}}的作业</h3>
@@ -180,6 +198,6 @@ onMounted(load)
         </template><p v-else class="muted">请选择一位学生查看作业。</p></section>
       </div>
     </template>
-    <button v-else-if="error" class="secondary" @click="load">重新加载</button>
+    <button v-else-if="error" class="secondary" @click="refresh">重新加载</button>
   </div>
 </template>

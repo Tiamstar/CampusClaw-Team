@@ -12,6 +12,7 @@ export function saveTokens(tokens: TokenPair) {
 export function clearTokens() {
   accessToken = null
   sessionStorage.removeItem(refreshKey)
+  for(const key of Object.keys(sessionStorage))if((key.startsWith('campusclaw.assembly.')||key.startsWith('campusclaw.forum.')))sessionStorage.removeItem(key)
 }
 
 export function hasStoredAuth() {

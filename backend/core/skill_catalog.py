@@ -11,6 +11,7 @@ APPS = [
     {"id": "code", "name": "编程实验辅导", "icon": "⌘", "description": "用假设、最小实验和证据理解代码与调试。", "prompt": "围绕学习目标帮助分析代码和报错，指导小步实验；运行结论必须对应实际工具返回。", "starter": "帮我分析一段报错，先明确现象和验证假设", "default_skill_ids": ["programming-tutor"]},
     {"id": "research", "name": "论文与学术阅读", "icon": "◈", "description": "读懂研究问题、方法、证据与局限。", "prompt": "依据实际提供的论文或教材进行结构导读，解释推理并提出阅读问题，不编造实验和引文。", "starter": "请带我读懂材料中的研究问题、论证与局限", "default_skill_ids": ["academic-reading"]},
     {"id": "writing", "name": "写作反馈", "icon": "✎", "description": "对已有文字和项目报告给出可执行的修改建议。", "prompt": "结合任务要求和实际文本给学习反馈，让学习者理解修改理由并保留自己的表达。", "starter": "请根据任务要求反馈我的初稿，指出一项最优先的改进", "default_skill_ids": ["student-feedback-writer", "rubric-builder"]},
+    {"id":"question-bank","name":"教师试卷与题库","icon":"▤","description":"检索私有题库及原卷索引，辅助教师校对、选题和组卷。","prompt":"先读取 question-bank 技能，仅检索教师所有的题库。识别上传试卷请到测验与题库的试卷识别入口，入库与发布由教师确认。","starter":"列出我的题库及其原卷来源，帮助我选择完整题组","default_skill_ids":["question-bank"]},
 ]
 
 LEGACY_SKILL_IDS = {

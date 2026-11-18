@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import CourseworkAI from '../src/CourseworkAI.vue'
 import { api } from '../src/api'
+import {confirmReviewNotesLeave,hasUnsavedReviewNotes} from '../src/unsavedReviewNotes'
 vi.mock('../src/api',()=>({api:vi.fn()}))
 const config={grading_enabled:true,explanation_enabled:true,revision:2}
 const item={id:'c1',title:'积分',reference:'x^2',maximum:'10.00',score:'5.00',feedback:'少计算下限'}
@@ -39,4 +40,73 @@ it('errors keep request identity for network retry and never invent a result',as
 it('disabled or stale drafts cannot be adopted and malicious explanations are sanitized',async()=>{
   responses([{...task,current:false,result:{}},{...task,id:9,kind:'explanation',status:'succeeded',result:{explanation:'<img src=x onerror=alert(1)> $x^2$'}}]);const v=mount(CourseworkAI,{props});await flushPromises()
   expect(v.text()).not.toContain('采用为复核起点');expect(v.find('img[onerror]').exists()).toBe(false);expect(v.find('.katex').exists()).toBe(true);v.unmount()
+})
+
+it('persists self-review with grade and record revisions without altering grades',async()=>{
+ vi.mocked(api).mockImplementation(async(path,method)=>{
+  if(path.includes('settings'))return config
+  if(path.includes('wrong-answer-reviews'))return method==='POST'?{item_id:'c1',status:'mastered',note:'',revision:1}:{}
+  return []
+ })
+ const w=mount(CourseworkAI,{props:{...props,isTeacher:false,version:{...props.version,grade_published:true,grade:{revision:2,reviewed_items:[item]}} as any}});await flushPromises()
+ await w.findAll('button').find(b=>b.text()==='标记已掌握')!.trigger('click');await flushPromises()
+ expect(api).toHaveBeenCalledWith('submission-versions/3/wrong-answer-reviews/','POST',{item_id:'c1',status:'mastered',note:'',expected_revision:0,grade_revision:2})
+ expect(w.get('.review-badge').text()).toBe('已掌握')
+ expect(vi.mocked(api).mock.calls.some(([p])=>p.includes('/grade/'))).toBe(false);w.unmount()
+})
+
+it('does not let a late polling result undo a newly saved self-review',async()=>{
+ vi.useFakeTimers()
+ let reads=0,finish!:(value:unknown)=>void
+ vi.mocked(api).mockImplementation(async(path,method)=>{
+  if(path.includes('settings'))return config
+  if(path.includes('wrong-answer-reviews')){
+   if(method==='POST')return {item_id:'c1',status:'mastered',note:'',revision:1}
+   if(++reads===2)return new Promise(resolve=>finish=resolve)
+   return {}
+  }
+  return [{...task,status:'queued',result:{}}]
+ })
+ const w=mount(CourseworkAI,{props:{...props,isTeacher:false,version:{...props.version,grade_published:true,grade:{revision:2,reviewed_items:[item]}} as any}});await flushPromises()
+ await vi.advanceTimersByTimeAsync(3000);await flushPromises()
+ await w.findAll('button').find(b=>b.text()==='标记已掌握')!.trigger('click');await flushPromises()
+ finish({});await flushPromises()
+ expect(w.get('.review-badge').text()).toBe('已掌握')
+ expect(w.text()).toContain('已保存：自评已掌握')
+ w.unmount();vi.useRealTimers()
+})
+
+it('keeps private note input after failure and saves it without changing mastery',async()=>{
+ let fail=true
+ vi.mocked(api).mockImplementation(async(path,method,data)=>{
+  if(path.includes('settings'))return config
+  if(path.includes('wrong-answer-reviews')){
+   if(method==='POST'){if(fail)throw new Error('网络失败');return {item_id:'c1',status:'mastered',note:(data as any).note,revision:3}}
+   return {c1:{status:'mastered',note:'原备注',revision:2}}
+  }
+  return []
+ })
+ const w=mount(CourseworkAI,{props:{...props,isTeacher:false,version:{...props.version,grade_published:true,grade:{revision:2,reviewed_items:[item]}} as any}});await flushPromises()
+ const note=w.get('textarea');expect((note.element as HTMLTextAreaElement).value).toBe('原备注')
+ await note.setValue('先检查上下限')
+ const save=w.findAll('button').find(b=>b.text()==='保存复习备注')!
+ await save.trigger('click');await flushPromises()
+ expect((note.element as HTMLTextAreaElement).value).toBe('先检查上下限');expect(w.text()).toContain('备注尚未保存')
+ fail=false;await save.trigger('click');await flushPromises()
+ expect(api).toHaveBeenLastCalledWith('submission-versions/3/wrong-answer-reviews/','POST',{item_id:'c1',status:'mastered',note:'先检查上下限',expected_revision:2,grade_revision:2})
+ expect(w.text()).not.toContain('备注尚未保存');expect(w.get('.review-badge').text()).toBe('已掌握');w.unmount()
+})
+
+it('protects unsaved notes and unregisters the guard when the component leaves',async()=>{
+ vi.mocked(api).mockImplementation(async(path)=>path.includes('settings')?config:path.includes('wrong-answer-reviews')?{}:[])
+ const w=mount(CourseworkAI,{props:{...props,isTeacher:false,version:{...props.version,grade_published:true,grade:{revision:2,reviewed_items:[item]}} as any}});await flushPromises()
+ expect(hasUnsavedReviewNotes()).toBe(false)
+ await w.get('textarea').setValue('待保存的反思')
+ const confirm=vi.spyOn(window,'confirm').mockReturnValue(false)
+ expect(confirmReviewNotesLeave()).toBe(false)
+ expect(confirm).toHaveBeenCalledOnce()
+ const unload=new Event('beforeunload',{cancelable:true});window.dispatchEvent(unload);expect(unload.defaultPrevented).toBe(true)
+ await w.get('textarea').setValue('');expect(hasUnsavedReviewNotes()).toBe(false)
+ await w.get('textarea').setValue('仍未保存');w.unmount()
+ expect(hasUnsavedReviewNotes()).toBe(false);confirm.mockRestore()
 })

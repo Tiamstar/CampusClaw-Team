@@ -11,9 +11,25 @@ from . import views, assignment_views, file_views
 from . import agent_views, platform_views
 from . import forum_views
 from . import quiz_views
+from . import exam_views
+from . import dashboard_views
+from . import notification_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
+    path('notifications/', notification_views.inbox),
+    path('notifications/unread-count/', notification_views.unread_count),
+    path('notifications/read-all/', notification_views.mark_all_read),
+    path('notifications/<int:notification_id>/read/', notification_views.mark_read),
+    path('courses/<int:course_id>/overview/', dashboard_views.overview),
+    path("grading-queue/", assignment_views.grading_queue),
+    path('courses/<int:course_id>/exam-sources/',exam_views.sources),
+    path('exam-sources/<int:source_id>/',exam_views.source_detail),
+    path('exam-sources/<int:source_id>/file/',exam_views.source_file),
+    path('courses/<int:course_id>/question-assets/',exam_views.upload_asset),
+    path('question-assets/<int:asset_id>/',exam_views.asset_file),
+    path('courses/<int:course_id>/question-groups/',exam_views.groups),
+    path('question-groups/<int:group_id>/',exam_views.group_detail),
     path('agent/threads/<int:thread_id>/confirmations/',confirmation_views.confirmations),
     path('agent/threads/<int:thread_id>/confirmations/<uuid:confirmation_id>/',confirmation_views.action),
     path('courses/<int:course_id>/audit-events/', audit_views.events),
@@ -55,6 +71,8 @@ urlpatterns = [
     path('quiz-attempts/<int:attempt_id>/answers/',quiz_views.save_answers),
     path('quiz-attempts/<int:attempt_id>/submit/',quiz_views.submit),
     path('quiz-attempts/<int:attempt_id>/review/',quiz_views.review),
+    path('quiz-attempts/<int:attempt_id>/comparison/',quiz_views.comparison),
+    path('quiz-attempts/<int:attempt_id>/questions/<int:question_id>/review/',quiz_views.review_question),
     path('quiz-attempts/<int:attempt_id>/suggestion/',quiz_views.suggestion),
     path('quiz-attempts/<int:attempt_id>/images/<int:question_id>/',quiz_views.upload_image),
     path('quiz-images/<int:image_id>/',quiz_views.answer_image),
@@ -98,6 +116,7 @@ urlpatterns = [
     path("courses/<int:course_id>/guidance-tasks/", coursework_views.guidance_tasks),
     path("courses/<int:course_id>/skill-monitor/", telemetry_views.skill_monitor),
     path("courses/<int:course_id>/wrong-answers/", coursework_views.wrong_answers),
+    path("submission-versions/<int:version_id>/wrong-answer-reviews/", coursework_views.wrong_answer_reviews),
     path("submission-versions/<int:version_id>/ai-tasks/", coursework_views.version_tasks),
     path("coursework-tasks/<int:task_id>/", coursework_views.task_detail),
     path("submission-versions/<int:version_id>/grade/", assignment_views.grade_submission),

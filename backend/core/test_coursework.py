@@ -180,6 +180,20 @@ class CourseworkTests(TestCase):
         self.publication(self.vid,True,3);self.submit(text_content='new')
         self.assertEqual(self.sc.get(url).data['results'],[])
 
+    def test_student_can_persist_review_state_only_for_current_public_wrong_item(self):
+        self.seed();pk=self.enqueue().data['id'];self.process(pk)
+        self.assertEqual(self.reviewed_grade(pk).status_code,200)
+        url=f'/api/submission-versions/{self.vid}/wrong-answer-reviews/'
+        self.assertEqual(self.sc.post(url,{'item_id':'c1','status':'mastered','grade_revision':1,'expected_revision':0},format='json').status_code,200)
+        self.assertEqual(self.sc.get(f'/api/courses/{self.course.pk}/wrong-answers/').data['results'][0]['reviews']['c1']['status'],'mastered')
+        self.assertEqual(self.sc.post(url,{'item_id':'missing','status':'mastered','grade_revision':1,'expected_revision':0},format='json').status_code,409)
+        self.assertEqual(self.tc.post(url,{'item_id':'c1','status':'mastered','grade_revision':1,'expected_revision':0},format='json').status_code,404)
+        self.assertEqual(self.pc.get(url).status_code,404)
+        self.assertEqual(self.sc.post(url,{'item_id':'c1','status':'reviewing','grade_revision':1,'expected_revision':0},format='json').status_code,409)
+        self.assertEqual(self.sc.post(url,[],format='json').status_code,400)
+        self.assertEqual(self.publication(self.vid,False,1).status_code,200)
+        self.assertEqual(self.sc.post(url,{'item_id':'c1','status':'reviewing','grade_revision':1,'expected_revision':1},format='json').status_code,409)
+
     def test_real_text_attachment_is_passed_with_source_kind_and_no_paths(self):
         self.seed();v=self.submit(files=[self.upload('work.txt',b'F(x)=x^2; result 2')])
         self.vid=v.data['id'];self.task_url=f'/api/submission-versions/{self.vid}/ai-tasks/'

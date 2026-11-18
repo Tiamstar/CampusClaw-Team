@@ -1,10 +1,12 @@
 import uuid
+from decimal import Decimal
 from django.db import transaction
 from django.db.models import OuterRef, Subquery, F
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Course, Membership, SubmissionVersion, CourseworkTask
+from .models import Course, Membership, Submission, SubmissionVersion, CourseworkTask
+from .coursework_models import WrongAnswerReview
 from . import coursework_service as service
 
 
@@ -134,5 +136,45 @@ def wrong_answers(request, course_id):
         if any(float(r['score']) < float(r['maximum']) for r in data['grade']['reviewed_items']):
             assignment = version.submission.assignment
             # No roster, classmate data or unpublished grades enter this projection.
-            results.append({'assignment': {'id': assignment.pk, 'course_id': course_id, 'title': assignment.title, 'max_score': str(assignment.max_score)}, 'version': data})
+            item_ids={str(item['id']) for item in data['grade']['reviewed_items'] if float(item['score']) < float(item['maximum'])}
+            reviews=review_projection(WrongAnswerReview.objects.filter(student=request.user,version=version,grade_revision=version.grading_revision,item_id__in=item_ids))
+            results.append({'assignment': {'id': assignment.pk, 'course_id': course_id, 'title': assignment.title, 'max_score': str(assignment.max_score)}, 'version': data, 'reviews':reviews})
     return Response({'results': results, 'has_more': len(versions)>20})
+
+
+def review_projection(rows):
+    return {r.item_id:{'status':r.status,'note':r.note,'revision':r.revision,'updated_at':r.updated_at} for r in rows}
+
+
+@api_view(['GET', 'POST'])
+def wrong_answer_reviews(request, version_id):
+    initial=get_object_or_404(SubmissionVersion.objects.select_related('submission__assignment'),pk=version_id)
+    course_id=initial.submission.assignment.course_id
+    membership=access(request.user,course_id)
+    if not membership or membership.role!='student' or initial.submission.student_id!=request.user.pk:
+        return Response({'error':'错题记录不存在'},status=404)
+    if request.method=='POST':
+        data=request.data
+        if not isinstance(data,dict) or not isinstance(data.get('item_id'),str) or not 1<=len(data['item_id'])<=120 or not isinstance(data.get('status'),str) or data['status'] not in dict(WrongAnswerReview.STATUS_CHOICES) or type(data.get('expected_revision')) is not int or type(data.get('grade_revision')) is not int:
+            return Response({'error':'错题复习状态格式无效'},status=400)
+        if not isinstance(data.get('note',''),str) or len(data.get('note',''))>500:
+            return Response({'error':'复习备注最多500字'},status=400)
+    with transaction.atomic():
+        # Same lock ordering as grading/publication/submission to recheck current evidence.
+        Course.objects.select_for_update().get(pk=course_id)
+        membership=access(request.user,course_id)
+        if not membership or membership.role!='student':return Response({'error':'课程权限已变化'},status=404)
+        Submission.objects.select_for_update().get(pk=initial.submission_id)
+        version=SubmissionVersion.objects.select_for_update().get(pk=version_id)
+        latest=SubmissionVersion.objects.filter(submission_id=version.submission_id).order_by('-number').values_list('pk',flat=True).first()
+        formal=version.grade_revisions.filter(revision=version.grading_revision,published=True).first() if version.published_at and latest==version.pk else None
+        items={str(i['id']) for i in formal.reviewed_items if Decimal(i['score'])<Decimal(i['maximum'])} if formal else set()
+        rows=WrongAnswerReview.objects.filter(student=request.user,version=version,grade_revision=version.grading_revision,item_id__in=items)
+        if request.method=='GET':return Response(review_projection(rows))
+        if data['item_id'] not in items or data['grade_revision']!=version.grading_revision:
+            return Response({'error':'评分依据已变化，请刷新错题'},status=409)
+        row=rows.filter(item_id=data['item_id']).first()
+        if data['expected_revision']!=(row.revision if row else 0):return Response({'error':'复习记录已变化，请刷新'},status=409)
+        if row is None:row=WrongAnswerReview(version=version,student=request.user,item_id=data['item_id'],grade_revision=version.grading_revision)
+        row.status=data['status'];row.note=data.get('note','');row.revision+=1;row.save()
+        return Response({'item_id':row.item_id,**review_projection([row])[row.item_id]})

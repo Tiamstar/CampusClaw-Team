@@ -17,11 +17,15 @@ export type AgentCitation = {chunk_id:number; material_id:number; attachment_id?
 export type AgentMessage = {id:number; role:'user'|'assistant'|'tool'; content:string; citations:AgentCitation[]; attachments:{id:number;name:string;mime_type:string}[]; metadata:Record<string,unknown>; created_at:string}
 export type AgentArtifact = {id:number; name:string; mime_type:string; download_url:string; preview_url:string; source_url?:string|null; created_at:string}
 
+export class ApiError extends Error {
+  constructor(message:string,public readonly status:number){super(message);this.name='ApiError'}
+}
+
 async function checkResponse(res: Response) {
   if (!res.ok) {
-    if (res.status >= 500) throw new Error('服务暂时不可用，请稍后重试')
+    if (res.status >= 500) throw new ApiError('服务暂时不可用，请稍后重试',res.status)
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || body.detail || `请求失败 (${res.status})`)
+    throw new ApiError(body.error || body.detail || `请求失败 (${res.status})`,res.status)
   }
   return res
 }

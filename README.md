@@ -58,7 +58,7 @@ docker compose exec backend python manage.py createsuperuser
 docker compose ps
 ```
 
-默认 mock 可用于本地对话与流程验证。真实模型、RAG 需在 `.env` 填写 `MODEL_PROVIDER`、模型地址、名称和密钥，以及 `EMBEDDING_BASE_URL`、模型、密钥和 2048 维配置，再重建后端。地址按照兼容服务要求以 `/v1` 结尾。真实 SMTP 按 `.env.example` 配置。
+默认 mock 可用于本地对话与流程验证。真实模型、RAG 需在 `.env` 填写 `MODEL_PROVIDER`、模型地址、名称和密钥，以及 `EMBEDDING_BASE_URL`、模型、密钥和 2048 维配置，再重建后端。OpenAI/Anthropic 协议及根地址、`/v1` 地址兼容说明见 [模型配置](docs/model-configuration.md)。真实 SMTP 按 `.env.example` 配置。
 
 本轮本机已复用个人项目的模型、Embedding 与 SMTP 配置，实际验证见 [教学更新记录](reports/teaching-update.md)。新克隆环境仍需自行配置这些服务，仓库中的示例保持空值。
 
