@@ -1,0 +1,75 @@
+{
+  "course_id": 15,
+  "join_code": "UAGU8SDB",
+  "scope": "Actual wall-clock monitor worker over explicitly inserted synthetic terminal samples; not real provider failures or elapsed-time simulation",
+  "checks": {
+    "trigger_after_at_least_120_seconds": true,
+    "one_trigger_event": true,
+    "teacher_http_policy_and_firing": true,
+    "student_monitor_denied": true,
+    "recovery_after_at_least_120_seconds": true,
+    "two_total_transition_events": true,
+    "original_five_failures_retained": true
+  },
+  "observations": [
+    {
+      "observed_at": "2026-11-16T04:33:13.674179+00:00",
+      "firing": false,
+      "observation": "breaching",
+      "pending_since": "2026-11-16T04:33:11.452331+00:00",
+      "evaluated_at": "2026-11-16T04:33:11.452331+00:00"
+    },
+    {
+      "observed_at": "2026-11-16T04:35:13.574398+00:00",
+      "firing": true,
+      "observation": "breaching",
+      "pending_since": null,
+      "evaluated_at": "2026-11-16T04:35:11.669124+00:00"
+    },
+    {
+      "observed_at": "2026-11-16T04:35:13.707343+00:00",
+      "firing": true,
+      "observation": "breaching",
+      "pending_since": null,
+      "evaluated_at": "2026-11-16T04:35:11.669124+00:00"
+    },
+    {
+      "observed_at": "2026-11-16T04:35:43.707200+00:00",
+      "firing": true,
+      "observation": "normal",
+      "pending_since": "2026-11-16T04:35:41.758551+00:00",
+      "evaluated_at": "2026-11-16T04:35:41.758551+00:00"
+    },
+    {
+      "observed_at": "2026-11-16T04:37:43.641481+00:00",
+      "firing": false,
+      "observation": "normal",
+      "pending_since": null,
+      "evaluated_at": "2026-11-16T04:37:41.989578+00:00"
+    }
+  ],
+  "passed": true,
+  "failed_fixture_ids": [
+    18,
+    19,
+    20,
+    21,
+    22
+  ],
+  "alert_id": 2,
+  "success_fixture_added_at": "2026-11-16T04:35:13.706038+00:00",
+  "events": [
+    {
+      "firing": true,
+      "value": 1.0,
+      "sample_size": 5,
+      "created_at": "2026-11-16T04:35:11.669124+00:00"
+    },
+    {
+      "firing": false,
+      "value": 0.2,
+      "sample_size": 25,
+      "created_at": "2026-11-16T04:37:41.989578+00:00"
+    }
+  ]
+}

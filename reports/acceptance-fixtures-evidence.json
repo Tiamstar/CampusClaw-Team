@@ -1,0 +1,66 @@
+{
+  "scope": "Codex independent Docker engineering rehearsal; not another human member acceptance or public deployment",
+  "started_at": "20261116-110456",
+  "resources": {
+    "network": "acceptance-seed-20261116-110456-net",
+    "database_container": "acceptance-seed-20261116-110456-db",
+    "app_container": "acceptance-seed-20261116-110456-app"
+  },
+  "no_published_ports": true,
+  "isolated_internal_network": true,
+  "checks": {
+    "first_import_new": true,
+    "second_import_reused": true,
+    "same_manifest": true,
+    "all_database_table_digests_unchanged_by_rerun": true,
+    "all_media_digests_unchanged_by_rerun": true,
+    "actual_http_password_login_grades_statistics_permissions": true,
+    "retained_source_business_counts_unchanged": true
+  },
+  "passed": true,
+  "backend_image": "sha256:712f1fe338e6eb5a68fedbbe05ecc60b747b71b1cd5fa98391ed41af5bb6d728",
+  "fixture_summary": {
+    "users": 11,
+    "courses": 2,
+    "quiz_attempts": 16,
+    "quiz_grade_revisions": 32,
+    "files": 3,
+    "database_tables_checked": 77
+  },
+  "http": {
+    "actual_http": true,
+    "password_logins": 3,
+    "teacher_totals": [
+      "87.00",
+      "57.00",
+      "91.00",
+      "91.00",
+      "91.00",
+      "91.00",
+      "91.00",
+      "91.00"
+    ],
+    "student_own_only": true,
+    "cross_course_status": 403,
+    "statistics": {
+      "sample_size": 8,
+      "correct_rate": "0.5",
+      "discrimination": "1"
+    }
+  },
+  "resources_retained_stopped": true,
+  "validation": {
+    "host_tests": 8,
+    "backend_tests": 210,
+    "frontend_tests": 83,
+    "frontend_test_files": 17,
+    "production_build": "passed",
+    "migration_drift": "none",
+    "security": "passed",
+    "python_locks_audited": 4,
+    "known_python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "strict_openspec_changes": 7,
+    "focused_tests": 5
+  }
+}

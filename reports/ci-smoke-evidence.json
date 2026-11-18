@@ -1,0 +1,250 @@
+{
+  "passed": true,
+  "fixtures_retained": true,
+  "project": "ci-smoke-20261116",
+  "model_mode": "mock",
+  "real_mcp": true,
+  "sandbox_checked": true,
+  "scope": "Local engineering smoke; not real-model, public HTTPS or human independent acceptance",
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/health/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "8affc55282944eb3906a06b077cf21c5"
+    },
+    {
+      "method": "GET",
+      "path": "/health/live/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "669322343bd34d1ab48299c1704df2cb"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "expected": 200,
+      "request_id": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/me/",
+      "status": 401,
+      "expected": 401,
+      "request_id": "6fb5c50a269e46dba2e0cb03d432f382"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "39a361f3b3514b6981e103c59177a786"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "8d62f170aa4b4d66b036c2911a3d0623"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "3334b0a7255440b79b03e5997b6da16b"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/catalog/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "46e682f90e0e46bb91d6ac1cfc857bbe"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/",
+      "status": 201,
+      "expected": 201,
+      "request_id": "28b117e7d5944ce3aa19df7d629c2854"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/join/",
+      "status": 201,
+      "expected": 201,
+      "request_id": "9040def735254aee806c6fdd8fac8840"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/1/assignments/",
+      "status": 201,
+      "expected": 201,
+      "request_id": "012015c56f1a4883b58fdb308728fcd6"
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/1/assignments/",
+      "status": 403,
+      "expected": 403,
+      "request_id": "63c96fa5fd054ff3b40e4f9ab47a3fd6"
+    },
+    {
+      "method": "GET",
+      "path": "/api/courses/1/knowledge/search/?q=test&mode=keyword",
+      "status": 404,
+      "expected": 404,
+      "request_id": "0b810bf40ac9463ca909731242f04d98"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/",
+      "status": 201,
+      "expected": 201,
+      "request_id": "cbb5654caacd4426acde37ce1971c417"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/threads/1/messages/",
+      "status": 404,
+      "expected": 404,
+      "request_id": "16db3e83634946eea6accf13a913c029"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/messages/stream/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "59c7a6d0094c4278ab18e54a1ca08329"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/platform-tools/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "a54fa0cae9fe494e8cab0b6a06233c35"
+    },
+    {
+      "method": "GET",
+      "path": "/api/courses/1/assistant/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "3cc0c2588e734ccbb97bd5f53dda699d"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/courses/1/assistant/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "57a50bbdbccb44e49446bce173153feb"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/tool-test/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "9df3d42139b24f8eac0c89cbc6608d81"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/a8d413b1-8926-4041-bdb0-844773beba4a/",
+      "status": 404,
+      "expected": 404,
+      "request_id": "49b69cab7a8643728d11b6b570e8df13"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/a8d413b1-8926-4041-bdb0-844773beba4a/",
+      "status": 400,
+      "expected": 400,
+      "request_id": "7549d4a39d2049b1aa78e93c7fc368f3"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/a8d413b1-8926-4041-bdb0-844773beba4a/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "f40c2c1d286948529c2accc400461497"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/a8d413b1-8926-4041-bdb0-844773beba4a/",
+      "status": 409,
+      "expected": 409,
+      "request_id": "749832cd0fea4732a3693c6b9959f1a5"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/tool-test/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "256f1c38d9194f0cad7c3d6500b074cb"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/d71bcecc-5153-4e35-9974-9448b29e70fe/",
+      "status": 404,
+      "expected": 404,
+      "request_id": "664ec0a933e747e885c084f09b0fe169"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/d71bcecc-5153-4e35-9974-9448b29e70fe/",
+      "status": 400,
+      "expected": 400,
+      "request_id": "0870e1e00db24b07b2894b7fa30daddd"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/d71bcecc-5153-4e35-9974-9448b29e70fe/",
+      "status": 200,
+      "expected": 200,
+      "request_id": "ea0325cab194484a8b546e69a5673ed7"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/1/confirmations/d71bcecc-5153-4e35-9974-9448b29e70fe/",
+      "status": 409,
+      "expected": 409,
+      "request_id": "49f3a4175ce9436e9b386c4a3fd3dac7"
+    }
+  ],
+  "synthetic_user_ids": [
+    2,
+    3,
+    4
+  ],
+  "course_id": 1,
+  "thread_id": 1,
+  "passed_requests": 29,
+  "retained_database_observation": {
+    "users": 4,
+    "courses": 1,
+    "assignments": 1,
+    "threads": 1,
+    "confirmations": [
+      {
+        "status": "succeeded",
+        "tool_name": "mcp_1_formula_hint"
+      },
+      {
+        "status": "succeeded",
+        "tool_name": "mcp_1_python_execute"
+      }
+    ]
+  },
+  "validation": {
+    "host_tests": 20,
+    "backend_tests": 213,
+    "frontend_tests": 83,
+    "frontend_files": 17,
+    "production_build": "passed",
+    "security": "passed",
+    "python_locks_audited": 4,
+    "known_python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "strict_openspec_changes": 7
+  }
+}

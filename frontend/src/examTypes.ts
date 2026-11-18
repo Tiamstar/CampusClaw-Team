@@ -1,0 +1,4 @@
+export type DraftQuestion={question_id?:number;question_revision?:number;kind:string;body:string;options:string[];answer:{values:string[]};explanation:string;source_units:number[]}
+export type DraftGroup={group_id?:number;group_revision?:number;title:string;material:string;source_units:number[];questions:DraftQuestion[]}
+export type ExamSource={id:number;name:string;original_name?:string;archived_at?:string|null;bank_versions?:Record<string,number>;group_versions?:Record<string,number>;history?:{revision:number;created_at:string}[];status:string;revision:number;error:string;model:string;created_at?:string;download_url:string;units:{id:number;label:string;text:string;asset_ids:number[]}[];draft:{groups:DraftGroup[]};mapping:{group_id:number;question_id:number;source_units:number[]}[]}
+export const questionKinds:Record<string,string>={single:'单选',multiple:'多选',boolean:'判断',blank:'单空填空',short:'简答 / 主观题'}

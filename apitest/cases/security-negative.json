@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "sql": [
+    {
+      "id": "SQL-01",
+      "query": "' OR 1=1 --"
+    },
+    {
+      "id": "SQL-02",
+      "query": "'; SELECT pg_sleep(1); --"
+    },
+    {
+      "id": "SQL-03",
+      "query": "' UNION SELECT NULL --"
+    },
+    {
+      "id": "SQL-04",
+      "query": "%_"
+    }
+  ],
+  "xss": {
+    "id": "XSS-01",
+    "title": "安全反例：脚本与公式（保留记录）",
+    "body": "SECURITY-NEGATIVE-XSS\n\n正常公式 $\\frac{1}{2}$。\n\n<script>document.body.dataset.securityProbe='executed'</script>\n<img src=x onerror=\"document.body.dataset.securityProbe='executed'\">\n<svg onload=\"document.body.dataset.securityProbe='executed'\"></svg>\n[危险链接](javascript:document.body.dataset.securityProbe='executed')\n\n$\\href{javascript:alert(1)}{unsafe}$\n\n`<script>这段代码应当按原文显示</script>`"
+  },
+  "csrf": [
+    "CSRF-01-admin-missing",
+    "CSRF-02-admin-invalid",
+    "CSRF-03-admin-foreign-origin",
+    "CSRF-04-admin-valid-control",
+    "CSRF-05-api-anonymous",
+    "CSRF-06-api-cookie-token",
+    "CSRF-07-api-explicit-bearer"
+  ]
+}

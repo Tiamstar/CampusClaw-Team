@@ -1,0 +1,11 @@
+# No external/public ports, internal CA, fresh project/data, mock services only.
+services:
+  caddy:
+    ports: !reset []
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile.rehearsal", "--adapter", "caddyfile"]
+    networks:
+      default:
+        aliases: [acceptance.localhost]
+networks:
+  default:
+    internal: true

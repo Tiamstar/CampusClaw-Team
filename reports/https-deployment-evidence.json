@@ -1,0 +1,62 @@
+{
+  "project": "https-rehearsal-20261116-03",
+  "scope": "Local internal-CA engineering rehearsal; not public HTTPS or independent human acceptance",
+  "passed": true,
+  "resources_retained": true,
+  "checks": {
+    "verified_ca_readiness": true,
+    "spa_over_verified_tls": true,
+    "hsts_header": true,
+    "password_login_T_A": true,
+    "password_login_S_A1": true,
+    "password_login_S_B1": true,
+    "teacher_grade_baseline": true,
+    "student_only_own_grade": true,
+    "cross_course_denied": true,
+    "csrf_secure_cookie": true,
+    "admin_same_origin_csrf_passes": true,
+    "admin_foreign_origin_rejected": true,
+    "admin_missing_csrf_rejected": true,
+    "spoofed_proto_replaced": true,
+    "chat_thread_created": true,
+    "mock_sse_completed": true,
+    "spoofed_client_ip_cannot_bypass_limit": true,
+    "http_redirects_to_https": true
+  },
+  "model": "mock; not a real provider test",
+  "tls": "local CA explicitly trusted; no insecure verification bypass",
+  "no_published_ports": true,
+  "internal_network": true,
+  "compose_config_validated": true,
+  "production_published_ports": {
+    "caddy": [
+      80,
+      443
+    ]
+  },
+  "source_and_rehearsal_volumes_disjoint": true,
+  "production_caddy_config": "valid (no network certificate issuance attempted)",
+  "caddy_image_digest": "caddy@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d",
+  "backend_image": "sha256:69a2eff651c3a614cf173b1c37a67e4ce2991bf79971d83fff89f71b9f10a009",
+  "validation": {
+    "host_tests": 11,
+    "backend_tests": 213,
+    "frontend_tests": 83,
+    "frontend_files": 17,
+    "production_build": "passed",
+    "security": "passed",
+    "python_locks_audited": 4,
+    "known_python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "strict_openspec_changes": 7
+  },
+  "remote_observation": {
+    "main_protected": false,
+    "current_user_admin": false,
+    "latest_workflow_run": 41993300903,
+    "latest_workflow_commit": "6c2603639e7b4447304e7b9c67a7a70b4536b1b6",
+    "status": "completed/failure before job start",
+    "reason": "The job was not started because your account is locked due to a billing issue.",
+    "new_workflow_dispatched": false
+  }
+}

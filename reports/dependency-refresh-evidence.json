@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-16",
+  "registry": "https://registry.npmjs.org",
+  "before": {
+    "info": 0,
+    "low": 0,
+    "moderate": 7,
+    "high": 0,
+    "critical": 0,
+    "total": 7
+  },
+  "after": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "affected_packages": [
+    "@vue/language-core",
+    "@vue/test-utils",
+    "editorconfig",
+    "glob",
+    "js-beautify",
+    "minimatch",
+    "vue-tsc"
+  ],
+  "versions": {
+    "vue-tsc": "3.3.14",
+    "@vue/test-utils": "2.6.0",
+    "js-beautify>glob": "14.0.2",
+    "js-beautify>editorconfig>minimatch": "11.0.8"
+  },
+  "compatibility": {
+    "node_local": "24.19.0",
+    "container_node_major": 22,
+    "formatter_and_glob": true
+  },
+  "scope": "npm advisory snapshot, not image/OS/unknown vulnerability certification",
+  "validation": {
+    "unified_exit_code": 0,
+    "backend_tests": 191,
+    "frontend_tests": 82,
+    "frontend_test_files": 17,
+    "production_build": true,
+    "security_exit_code": 0,
+    "python_locks_without_known_vulnerabilities": 4,
+    "secret_scan_passed": true,
+    "strict_openspec_passed": 7,
+    "node22_image_build": true,
+    "production_js_kb": 686.52
+  }
+}

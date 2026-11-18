@@ -1,0 +1,8 @@
+{
+    admin off
+}
+
+{$PUBLIC_HOST} {
+    tls internal
+    import routes.caddy
+}

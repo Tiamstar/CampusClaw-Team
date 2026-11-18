@@ -1,0 +1,51 @@
+# Compose >=2.24.4. Use together with docker-compose.yml and a NEW project.
+name: campusclaw-production
+services:
+  db:
+    ports: !reset []
+    restart: unless-stopped
+  mailpit:
+    ports: !reset []
+    restart: unless-stopped
+  campus-tools:
+    image: campusclaw-team-campus-tools
+    ports: !reset []
+    restart: unless-stopped
+  sandbox-runner:
+    image: campusclaw-team-sandbox-runner
+    restart: unless-stopped
+  backend:
+    image: campusclaw-team-backend
+    ports: !reset []
+    restart: unless-stopped
+    environment:
+      ALLOWED_HOSTS: ${PUBLIC_HOST:?Set PUBLIC_HOST in the dedicated production env},localhost,127.0.0.1,backend
+      CORS_ALLOWED_ORIGINS: https://${PUBLIC_HOST}
+      COOKIE_SECURE: "1"
+      AUTH_TRUST_PROXY_IP: "1"
+      DJANGO_TRUST_PROXY_TLS: "1"
+      DJANGO_HTTPS_ONLY: "1"
+      DJANGO_HSTS_SECONDS: "86400"
+  frontend:
+    image: campusclaw-team-frontend
+    ports: !reset []
+    restart: unless-stopped
+    volumes:
+      - ./deploy/nginx.static.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set PUBLIC_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL for public certificates}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deploy:/etc/caddy:ro
+      - caddydata:/data
+    depends_on:
+      backend: {condition: service_healthy}
+      frontend: {condition: service_healthy}
+volumes:
+  caddydata:

@@ -1,0 +1,44 @@
+{
+  "observed_at": "2026-11-16T02:26:38.261399+00:00",
+  "course_id": 14,
+  "post_id": 13,
+  "original_draft_id": 5,
+  "scope": "One explicit new real generation on retained injected fixture; no replay or alteration of original failure",
+  "checks": {
+    "old_failure_unchanged": true,
+    "old_failure_not_reclassified": true,
+    "no_reply_published": true,
+    "todo_still_open": true,
+    "new_terminal_status": true,
+    "student_denied": true
+  },
+  "http_status": 201,
+  "new_draft": {
+    "id": 6,
+    "status": "awaiting_review",
+    "error_code": "",
+    "error": "",
+    "model": "course-chat",
+    "request_id": "1e579e4c19e140fdb8478cca3ab10047",
+    "persisted_body_length": 92,
+    "citation_count": 1
+  },
+  "audit_codes": [],
+  "passed": true,
+  "interpretation": "New real call returned awaiting_review; old failure remains legacy_unknown. Specific failure categories proven by fault-injection regressions, not reproduced as a real provider failure.",
+  "validation": {
+    "unified_check": "passed",
+    "host_tests": 8,
+    "backend_tests": 205,
+    "frontend_tests": 83,
+    "frontend_test_files": 17,
+    "production_build": "passed",
+    "security_check": "passed",
+    "secret_scans": "passed (history and current files)",
+    "python_lock_audits": 4,
+    "known_python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "strict_openspec_changes": 7,
+    "build_warning": "Existing 686.52 kB JavaScript bundle exceeds 500 kB warning threshold"
+  }
+}

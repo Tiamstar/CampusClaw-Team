@@ -1,0 +1,2608 @@
+{
+  "synthetic_fixture": true,
+  "fixtures_retained": true,
+  "course_id": 7,
+  "version_id": 4,
+  "grade_before": {
+    "score": "5.00",
+    "grading_revision": 4,
+    "published_at": "2026-11-15T21:19:58.979116+00:00"
+  },
+  "provider": "openai",
+  "requests": [
+    {
+      "path_template": "submission-versions/[version]/ai-tasks/",
+      "status": 202,
+      "request_id": "87cf0c6756884c8ca77f669e7815a94f"
+    },
+    {
+      "path_template": "submission-versions/[version]/ai-tasks/",
+      "status": 202,
+      "request_id": "b1365e7d6ef145aeab575e00a3800764"
+    },
+    {
+      "path_template": "courses/[course]/guidance-tasks/",
+      "status": 202,
+      "request_id": "1d6d6b8766de4e7e8b3086e270e6dba9"
+    },
+    {
+      "path_template": "agent/threads/",
+      "status": 201,
+      "request_id": "7be02ce9553a4cd4be37e26222b82bed"
+    }
+  ],
+  "task_ids": [
+    15,
+    16,
+    17
+  ],
+  "tasks": [
+    {
+      "id": 15,
+      "kind": "grading",
+      "status": "draft",
+      "started_at": "2026-11-15 23:43:13.452178+00:00",
+      "created_at": "2026-11-15 23:43:13.393541+00:00",
+      "finished_at": "2026-11-15 23:43:19.016671+00:00",
+      "error": ""
+    },
+    {
+      "id": 17,
+      "kind": "guidance",
+      "status": "succeeded",
+      "started_at": "2026-11-15 23:43:28.162663+00:00",
+      "created_at": "2026-11-15 23:43:13.430974+00:00",
+      "finished_at": "2026-11-15 23:43:35.253562+00:00",
+      "error": ""
+    },
+    {
+      "id": 16,
+      "kind": "explanation",
+      "status": "succeeded",
+      "started_at": "2026-11-15 23:43:19.030487+00:00",
+      "created_at": "2026-11-15 23:43:13.479336+00:00",
+      "finished_at": "2026-11-15 23:43:26.143223+00:00",
+      "error": ""
+    }
+  ],
+  "thread_id": 21,
+  "stream": {
+    "status": 200,
+    "message_end": true,
+    "error_event": false,
+    "client_elapsed_ms": 2003,
+    "request_id": "2123393a6207441abd23c0f316b469ee",
+    "metric": [
+      {
+        "duration_ms": 1993,
+        "outcome": "completed",
+        "streaming": true,
+        "route": "api/agent/threads/<int:thread_id>/messages/stream/",
+        "course_id": 7
+      }
+    ]
+  },
+  "grade_after": {
+    "score": "5.00",
+    "grading_revision": 4,
+    "published_at": "2026-11-15T21:19:58.979116+00:00"
+  },
+  "teacher_dashboard": {
+    "window": {
+      "start": "2026-11-15T17:43:37.727438Z",
+      "end": "2026-11-15T23:43:37.727438Z",
+      "hours": 6
+    },
+    "skills": [
+      {
+        "kind": "grading",
+        "skill_id": "homework-grading@1.0.0",
+        "calls": 2,
+        "succeeded": 2,
+        "failed": 0,
+        "inflight": 0,
+        "mock": 0,
+        "usage_complete": 2,
+        "usage_partial": 0,
+        "usage_missing": 0,
+        "usage_invalid": 0,
+        "input_tokens": 993,
+        "output_tokens": 941,
+        "partial_tokens": null,
+        "total_tokens": 1934,
+        "latency_samples": 2,
+        "avg_ms": 4094.0,
+        "p95_ms": 5383.7,
+        "finished_tasks": 4,
+        "failed_tasks": 1,
+        "cancelled_tasks": 0,
+        "queued": 0,
+        "running": 0,
+        "oldest_queue_seconds": 0,
+        "usage_coverage": 1.0,
+        "failure_rate": 0.25
+      },
+      {
+        "kind": "explanation",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "calls": 2,
+        "succeeded": 2,
+        "failed": 0,
+        "inflight": 0,
+        "mock": 0,
+        "usage_complete": 2,
+        "usage_partial": 0,
+        "usage_missing": 0,
+        "usage_invalid": 0,
+        "input_tokens": 1248,
+        "output_tokens": 2079,
+        "partial_tokens": null,
+        "total_tokens": 3327,
+        "latency_samples": 2,
+        "avg_ms": 7353.0,
+        "p95_ms": 7594.2,
+        "finished_tasks": 5,
+        "failed_tasks": 1,
+        "cancelled_tasks": 0,
+        "queued": 0,
+        "running": 0,
+        "oldest_queue_seconds": 0,
+        "usage_coverage": 1.0,
+        "failure_rate": 0.2
+      },
+      {
+        "kind": "guidance",
+        "skill_id": "problem-guidance@1.0.0",
+        "calls": 4,
+        "succeeded": 4,
+        "failed": 0,
+        "inflight": 0,
+        "mock": 0,
+        "usage_complete": 4,
+        "usage_partial": 0,
+        "usage_missing": 0,
+        "usage_invalid": 0,
+        "input_tokens": 1859,
+        "output_tokens": 3379,
+        "partial_tokens": null,
+        "total_tokens": 5238,
+        "latency_samples": 4,
+        "avg_ms": 7221.0,
+        "p95_ms": 8664.05,
+        "finished_tasks": 4,
+        "failed_tasks": 0,
+        "cancelled_tasks": 0,
+        "queued": 0,
+        "running": 0,
+        "oldest_queue_seconds": 0,
+        "usage_coverage": 1.0,
+        "failure_rate": 0.0
+      }
+    ],
+    "queue_curve": [
+      {
+        "time": "2026-11-15T21:49:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:49:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:49:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:50:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:50:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:50:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:51:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:51:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 1,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:51:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:52:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:52:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 1,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:52:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:53:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:53:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:53:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:54:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:54:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:54:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:55:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:55:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:55:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:56:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:56:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:56:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:57:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:57:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:57:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:58:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:58:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:58:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:59:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:59:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T21:59:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:00:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:00:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:00:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:01:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:01:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:01:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:02:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:02:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:02:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:03:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:03:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:03:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:04:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:04:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:04:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:05:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:05:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:05:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:06:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:06:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:06:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:07:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:07:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:07:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:08:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:08:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:08:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:09:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:09:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:09:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:10:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:10:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:10:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:11:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:11:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:11:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:12:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:12:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:12:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:13:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:13:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:13:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:14:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:14:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:14:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:15:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:15:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:15:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:16:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:16:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:16:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:17:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:17:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:17:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:18:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:18:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:18:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:19:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:19:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:19:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:20:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:20:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:20:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:21:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:21:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:21:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:22:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:22:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:22:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:23:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:23:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:23:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:24:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:24:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:24:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:25:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:25:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:25:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:26:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:26:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:26:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:27:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:27:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:27:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:28:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:28:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:28:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:29:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:29:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:29:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:30:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:30:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:30:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:31:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:31:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:31:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:32:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:32:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:32:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:33:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:33:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:33:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:34:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:34:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:34:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:35:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:35:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:35:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:36:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:36:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:36:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:37:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:37:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:37:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:38:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:38:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:38:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:39:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:39:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:39:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:40:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:40:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:40:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:41:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:41:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:41:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:42:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:42:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:42:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:43:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:43:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:43:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:44:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:44:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:44:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:45:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:45:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:45:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:46:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:46:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:46:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:47:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:47:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:47:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:48:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:48:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:48:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:49:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:49:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:49:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:50:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:50:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:50:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:51:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:51:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:51:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:52:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:52:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:52:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:53:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:53:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:53:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:54:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:54:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:54:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:55:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:55:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:55:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:56:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:56:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:56:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:57:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:57:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:57:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:58:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:58:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:58:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:59:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:59:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T22:59:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:00:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:00:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:00:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:01:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:01:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:01:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:02:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:02:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:02:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:03:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:03:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:03:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:04:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:04:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:04:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:05:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:05:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:05:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:06:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:06:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:06:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:07:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:07:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:07:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:08:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:08:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:08:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:09:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:09:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:09:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:10:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:10:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:10:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:11:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:11:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:11:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:12:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:12:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:12:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:13:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:13:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:13:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:14:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:14:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:14:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:15:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:15:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:15:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:16:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:16:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:16:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:17:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:17:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:17:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:18:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:18:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:18:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:19:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:19:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:19:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:20:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:20:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:20:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:21:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:21:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:21:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:22:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:22:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:22:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:23:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:23:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:23:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:24:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:24:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:24:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:25:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:25:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:25:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:26:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:26:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:26:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:27:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:27:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:27:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:28:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:28:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:28:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:29:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:29:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:29:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:30:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:30:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:30:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:31:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:31:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:31:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:32:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:32:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:32:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:33:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:33:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:33:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:34:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:34:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:34:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:35:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:35:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:35:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:36:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:36:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:36:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:37:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:37:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:37:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:38:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:38:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:38:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:39:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:39:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:39:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:40:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:40:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:40:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:41:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:41:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:41:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:42:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:42:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:42:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:43:00Z",
+        "skill_id": "homework-grading@1.0.0",
+        "queued": 0,
+        "running": 0
+      },
+      {
+        "time": "2026-11-15T23:43:00Z",
+        "skill_id": "problem-guidance@1.0.0",
+        "queued": 0,
+        "running": 1
+      },
+      {
+        "time": "2026-11-15T23:43:00Z",
+        "skill_id": "wrong-answer-explanation@1.0.0",
+        "queued": 0,
+        "running": 0
+      }
+    ],
+    "http_latency": {
+      "routes": [
+        {
+          "route": "api/coursework-tasks/<int:task_id>/",
+          "method": "GET",
+          "streaming": false,
+          "requests": 42,
+          "completed": 42,
+          "closed": 0,
+          "transport_errors": 0,
+          "client_errors": 0,
+          "server_errors": 0,
+          "avg_ms": 24.88095238095238,
+          "p95_ms": 34.949999999999996
+        },
+        {
+          "route": "api/submission-versions/<int:version_id>/ai-tasks/",
+          "method": "POST",
+          "streaming": false,
+          "requests": 2,
+          "completed": 2,
+          "closed": 0,
+          "transport_errors": 0,
+          "client_errors": 0,
+          "server_errors": 0,
+          "avg_ms": 100.0,
+          "p95_ms": 104.5
+        },
+        {
+          "route": "api/agent/threads/<int:thread_id>/messages/stream/",
+          "method": "POST",
+          "streaming": true,
+          "requests": 1,
+          "completed": 1,
+          "closed": 0,
+          "transport_errors": 0,
+          "client_errors": 0,
+          "server_errors": 0,
+          "avg_ms": 1993.0,
+          "p95_ms": 1993.0
+        },
+        {
+          "route": "api/courses/<int:course_id>/guidance-tasks/",
+          "method": "POST",
+          "streaming": false,
+          "requests": 1,
+          "completed": 1,
+          "closed": 0,
+          "transport_errors": 0,
+          "client_errors": 0,
+          "server_errors": 0,
+          "avg_ms": 34.0,
+          "p95_ms": 34.0
+        }
+      ],
+      "curve": [
+        {
+          "route": "api/agent/threads/<int:thread_id>/messages/stream/",
+          "method": "POST",
+          "streaming": true,
+          "time": "2026-11-15T23:40:00Z",
+          "requests": 1,
+          "samples": 1,
+          "avg_ms": 1993.0,
+          "p95_ms": 1993.0
+        },
+        {
+          "route": "api/courses/<int:course_id>/guidance-tasks/",
+          "method": "POST",
+          "streaming": false,
+          "time": "2026-11-15T23:40:00Z",
+          "requests": 1,
+          "samples": 1,
+          "avg_ms": 34.0,
+          "p95_ms": 34.0
+        },
+        {
+          "route": "api/coursework-tasks/<int:task_id>/",
+          "method": "GET",
+          "streaming": false,
+          "time": "2026-11-15T23:40:00Z",
+          "requests": 42,
+          "samples": 42,
+          "avg_ms": 24.88095238095238,
+          "p95_ms": 34.949999999999996
+        },
+        {
+          "route": "api/submission-versions/<int:version_id>/ai-tasks/",
+          "method": "POST",
+          "streaming": false,
+          "time": "2026-11-15T23:40:00Z",
+          "requests": 2,
+          "samples": 2,
+          "avg_ms": 100.0,
+          "p95_ms": 104.5
+        }
+      ],
+      "routes_truncated": false,
+      "interval": "five_minutes",
+      "note": "HTTP计时从请求进入到响应内容消费结束；流式含模型等待和传输，非首字延迟。关闭/传输异常单列且不进入耗时分位数。HTTP 200不保证业务或模型成功。仅按服务器URL资源归属课程；无资源标识的集合/平台接口不分摊到课程。旧审计耗时不混入、不回填。"
+    },
+    "duration_curves": {
+      "model": [
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 2661.0,
+          "p95_ms": 2661.0
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 8951.0,
+          "p95_ms": 8951.0
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 7621.0,
+          "p95_ms": 7621.0
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T21:55:00Z",
+          "samples": 2,
+          "avg_ms": 6447.5,
+          "p95_ms": 6655.85
+        },
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 5527.0,
+          "p95_ms": 5527.0
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 7038.0,
+          "p95_ms": 7038.0
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 7085.0,
+          "p95_ms": 7085.0
+        }
+      ],
+      "task": [
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T21:10:00Z",
+          "samples": 1,
+          "avg_ms": 7419.978,
+          "p95_ms": 7419.978,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T21:15:00Z",
+          "samples": 1,
+          "avg_ms": 8095.16,
+          "p95_ms": 8095.16,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T21:15:00Z",
+          "samples": 1,
+          "avg_ms": 8052.503,
+          "p95_ms": 8052.503,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T21:20:00Z",
+          "samples": 2,
+          "avg_ms": 9779.884,
+          "p95_ms": 10374.2692,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 4674.97,
+          "p95_ms": 4674.97,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 114274.212,
+          "p95_ms": 114274.212,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T21:50:00Z",
+          "samples": 1,
+          "avg_ms": 9256.524,
+          "p95_ms": 9256.524,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T21:55:00Z",
+          "samples": 2,
+          "avg_ms": 7651.116,
+          "p95_ms": 7922.7594,
+          "processing_samples": 0,
+          "processing_avg_ms": null,
+          "processing_p95_ms": null,
+          "queue_avg_ms": null,
+          "queue_p95_ms": null
+        },
+        {
+          "skill_id": "homework-grading@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 5623.13,
+          "p95_ms": 5623.13,
+          "processing_samples": 1,
+          "processing_avg_ms": 5564.493,
+          "processing_p95_ms": 5564.493,
+          "queue_avg_ms": 58.637,
+          "queue_p95_ms": 58.637
+        },
+        {
+          "skill_id": "problem-guidance@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 21822.588,
+          "p95_ms": 21822.588,
+          "processing_samples": 1,
+          "processing_avg_ms": 7090.899,
+          "processing_p95_ms": 7090.899,
+          "queue_avg_ms": 14731.689,
+          "queue_p95_ms": 14731.689
+        },
+        {
+          "skill_id": "wrong-answer-explanation@1.0.0",
+          "time": "2026-11-15T23:40:00Z",
+          "samples": 1,
+          "avg_ms": 12663.887,
+          "p95_ms": 12663.887,
+          "processing_samples": 1,
+          "processing_avg_ms": 7112.736,
+          "processing_p95_ms": 7112.736,
+          "queue_avg_ms": 5551.151,
+          "queue_p95_ms": 5551.151
+        }
+      ],
+      "interval": "five_minutes",
+      "note": "按结束时间分桶，从原始样本计算平均/P95，不平均各桶P95。模型排除mock；任务总耗时包含排队、检索和输出校验，也包含演示及失败/取消。处理/排队耗时仅统计有本轮新增领取时间的有效记录，旧任务未知不补零。空桶不补样本，非容量验收结论。"
+    },
+    "curve_interval": "minute_sample",
+    "rules": {
+      "failure_rate": {
+        "threshold": 0.2,
+        "minimum": 5,
+        "window_minutes": 15
+      },
+      "model_p95_ms": {
+        "threshold": 15000,
+        "minimum": 5,
+        "window_minutes": 15
+      },
+      "queue_age_seconds": {
+        "threshold": 60,
+        "minimum": 1,
+        "window_minutes": 15
+      }
+    },
+    "alerts": [
+      {
+        "id": 1,
+        "skill_id": "problem-guidance@1.0.0",
+        "rule": "queue_age_seconds",
+        "firing": false,
+        "value": 0.0,
+        "threshold": 60.0,
+        "sample_size": 0,
+        "changed_at": "2026-11-15T21:53:10.307441Z",
+        "evaluated_at": "2026-11-15T23:43:35.179857Z"
+      }
+    ],
+    "events": [
+      {
+        "id": 2,
+        "alert__skill_id": "problem-guidance@1.0.0",
+        "alert__rule": "queue_age_seconds",
+        "firing": false,
+        "value": 0.0,
+        "sample_size": 0,
+        "created_at": "2026-11-15T21:53:10.307441Z"
+      },
+      {
+        "id": 1,
+        "alert__skill_id": "problem-guidance@1.0.0",
+        "alert__rule": "queue_age_seconds",
+        "firing": true,
+        "value": 81.105363,
+        "sample_size": 1,
+        "created_at": "2026-11-15T21:52:40.405196Z"
+      }
+    ],
+    "monitor_evaluated_at": "2026-11-15T23:43:35.179857Z",
+    "monitor_stale": false,
+    "usage_note": "仅累计网关完整上报的LLM用量；未上报、无效和部分上报不当作零，不含嵌入调用，不估算费用。队列曲线为后台采样，不回填历史。"
+  },
+  "student_monitor_status": 403,
+  "checks": {
+    "all_tasks_completed": true,
+    "all_task_starts_recorded": true,
+    "formal_grade_unchanged": true,
+    "stream_consumed_to_end": true,
+    "full_stream_metric": true,
+    "student_monitor_denied": true
+  }
+}
