@@ -17,3 +17,11 @@ htmlcov/
 .artifact-qa/
 artifacts/local/
 /CampusClaw选题说明(1).docx
+*.local.txt
+*.local.json
+backend/local.sqlite3
+backend/media/
+backend/staticfiles/
+frontend/dist/
+output/
+tmp/

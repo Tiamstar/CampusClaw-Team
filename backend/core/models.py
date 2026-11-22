@@ -1,0 +1,488 @@
+import secrets
+from pathlib import Path
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.utils import timezone
+from pgvector.django import VectorField
+from .quiz_models import Question, Quiz, QuizAttempt, QuizSaveReceipt, QuizGradeRevision, QuizAnswerImage, QuizSuggestion, QuestionImportBatch
+from .quiz_models import ExamSource, QuestionAsset, QuestionGroup
+from .quiz_models import ExamPaperEntry, ExamPaperRevision
+from .notification_models import GradeNotification
+
+
+class AuthRateLimit(models.Model):
+    """Shared, row-locked expiring counters; no raw email/IP persisted."""
+    key = models.CharField(max_length=64, primary_key=True)
+    count = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+
+
+class AcceptanceFixtureSet(models.Model):
+    """Import receipt only; reruns never reset members' acceptance work."""
+    key = models.CharField(max_length=64, primary_key=True)
+    version = models.PositiveIntegerField()
+    manifest = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class KnowledgePoint(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+    revision = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['course', 'name'], name='unique_course_point')]
+
+
+class ForumSettings(models.Model):
+    course = models.OneToOneField('Course', on_delete=models.CASCADE)
+    draft_enabled = models.BooleanField(default=True)
+    wait_hours = models.PositiveIntegerField(default=24)
+    timezone = models.CharField(max_length=64, default='Asia/Shanghai')
+    revision = models.PositiveIntegerField(default=0)
+
+
+class ForumPost(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    author = models.ForeignKey('User', on_delete=models.PROTECT)
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    anonymous = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False)
+    featured = models.BooleanField(default=False)
+    resolved_reply = models.ForeignKey('ForumReply', null=True, blank=True, on_delete=models.PROTECT, related_name='resolved_posts')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    revision = models.PositiveIntegerField(default=0)
+    points = models.ManyToManyField(KnowledgePoint, blank=True)
+    mentions = models.ManyToManyField('User', related_name='forum_mentions', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class ForumDraft(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey('User', on_delete=models.PROTECT)
+    status = models.CharField(max_length=24, default='running')
+    body = models.TextField(blank=True)
+    citations = models.JSONField(default=list)
+    error = models.CharField(max_length=200, blank=True)
+    model = models.CharField(max_length=200, blank=True)
+    skill_version = models.CharField(max_length=100, default='forum-answer-draft@1.0.0')
+    settings_revision = models.PositiveIntegerField(default=0)
+    request_id = models.CharField(max_length=64, blank=True)
+    confirmed_by = models.ForeignKey('User', null=True, on_delete=models.PROTECT, related_name='confirmed_forum_drafts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    published_at = models.DateTimeField(null=True)
+
+
+class ForumReply(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name='replies')
+    author = models.ForeignKey('User', on_delete=models.PROTECT)
+    body = models.TextField()
+    teacher_answer = models.BooleanField(default=False)
+    draft = models.OneToOneField(ForumDraft, null=True, blank=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ForumTodo(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
+    teacher = models.ForeignKey('User', on_delete=models.CASCADE)
+    reason = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['post', 'teacher', 'reason'], name='unique_forum_todo')]
+
+
+def token_code(length=8):
+    return "".join(secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(length))
+
+
+def upload_path(instance, filename):
+    suffix = Path(filename).suffix.lower()
+    return f"courses/{instance.course_id}/{secrets.token_hex(16)}{suffix}"
+
+
+def artifact_upload_path(instance, filename):
+    suffix = Path(filename).suffix.lower()
+    return f"agent-artifacts/{instance.owner_id}/{secrets.token_hex(16)}{suffix}"
+
+
+def agent_attachment_upload_path(instance, filename):
+    suffix = Path(filename).suffix.lower()
+    return f"agent-attachments/{instance.owner_id}/{secrets.token_hex(16)}{suffix}"
+
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra):
+        if not email:
+            raise ValueError("Email is required")
+        user = self.model(email=self.normalize_email(email).lower(), **extra)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra):
+        extra.update(is_staff=True, is_superuser=True, is_active=True)
+        return self.create_user(email, password, **extra)
+
+
+class User(AbstractUser):
+    username = None
+    email = models.EmailField(unique=True)
+    display_name = models.CharField(max_length=80)
+    can_create_course = models.BooleanField(default=False)
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+    objects = UserManager()
+
+
+class EmailCode(models.Model):
+    class Purpose(models.TextChoices):
+        REGISTER = "register", "Register"
+        RESET = "reset", "Reset password"
+    email = models.EmailField()
+    purpose = models.CharField(max_length=12, choices=Purpose.choices)
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        indexes = [models.Index(fields=["email", "purpose", "-created_at"])]
+
+
+class TeacherInvite(models.Model):
+    code_hash = models.CharField(max_length=128, unique=True)
+    label = models.CharField(max_length=100, blank=True)
+    expires_at = models.DateTimeField()
+    used_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Course(models.Model):
+    name = models.CharField(max_length=120)
+    icon = models.FileField(upload_to="course-icons/", blank=True)
+    join_code = models.CharField(max_length=12, unique=True, default=token_code)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Membership(models.Model):
+    class Role(models.TextChoices):
+        TEACHER = "teacher", "Teacher"
+        STUDENT = "student", "Student"
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
+    role = models.CharField(max_length=8, choices=Role.choices)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["course", "user"], name="unique_course_user")]
+
+
+class StoredFile(models.Model):
+    class Kind(models.TextChoices):
+        MATERIAL = "material", "Material"
+        ASSIGNMENT = "assignment", "Assignment attachment"
+        SUBMISSION = "submission", "Submission"
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    file = models.FileField(upload_to=upload_path)
+    original_name = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField()
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    uploaded_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Material(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="materials")
+    title = models.CharField(max_length=200)
+    attachment = models.OneToOneField(StoredFile, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class KnowledgeEntry(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        READY = "ready", "Ready"
+        FAILED = "failed", "Failed"
+
+    material = models.OneToOneField(Material, on_delete=models.CASCADE, related_name="knowledge_entry")
+    body_text = models.TextField(blank=True)
+    parser = models.CharField(max_length=32, blank=True)
+    content_hash = models.CharField(max_length=64, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    error_message = models.TextField(blank=True)
+    chunk_strategy = models.CharField(max_length=16, default="auto")
+    indexed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MaterialIndexTask(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    material = models.ForeignKey(Material, on_delete=models.CASCADE, related_name="index_tasks")
+    requested_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    retry_of = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
+    request_key = models.CharField(max_length=100)
+    payload_hash = models.CharField(max_length=64)
+    source = models.JSONField(default=dict)
+    status = models.CharField(max_length=16, default="queued")
+    phase = models.CharField(max_length=20, default="queued")
+    revision = models.PositiveIntegerField(default=1)
+    lease_token = models.UUIDField(null=True, blank=True)
+    lease_until = models.DateTimeField(null=True, blank=True)
+    request_id = models.CharField(max_length=64, blank=True)
+    error_code = models.CharField(max_length=40, blank=True)
+    error = models.CharField(max_length=500, blank=True)
+    events = models.JSONField(default=list)
+    result = models.JSONField(default=dict)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["course", "requested_by", "request_key"], name="unique_index_request"),
+            models.UniqueConstraint(fields=["material"], condition=models.Q(status__in=["queued", "running"]), name="one_active_material_index"),
+        ]
+        indexes = [models.Index(fields=["status", "created_at"], name="index_task_queue")]
+
+
+class KnowledgeChunk(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        READY = "ready", "Ready"
+        FAILED = "failed", "Failed"
+
+    entry = models.ForeignKey(KnowledgeEntry, on_delete=models.CASCADE, related_name="chunks")
+    chunk_index = models.PositiveIntegerField()
+    chunk_text = models.TextField()
+    start_offset = models.PositiveIntegerField(default=0)
+    end_offset = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["entry", "chunk_index"], name="unique_knowledge_chunk")]
+        indexes = [GinIndex(fields=['chunk_text'], opclasses=['gin_trgm_ops'],
+                            condition=models.Q(status='ready'), name='ready_chunk_text_trgm')]
+
+
+class ChunkEmbedding(models.Model):
+    chunk = models.OneToOneField(KnowledgeChunk, on_delete=models.CASCADE, related_name="embedding_record")
+    embedding = VectorField(dimensions=2048, null=True, blank=True)
+    model = models.CharField(max_length=160, blank=True)
+    dimensions = models.PositiveIntegerField(default=2048)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Assignment(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="assignments")
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    due_at = models.DateTimeField()
+    allow_late = models.BooleanField(default=False)
+    allowed_extensions = models.JSONField(default=list, blank=True)
+    max_file_size_mb = models.PositiveSmallIntegerField(default=50)
+    max_score = models.DecimalField(max_digits=7, decimal_places=2, default=100)
+    attachment = models.OneToOneField(StoredFile, null=True, blank=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AgentThread(models.Model):
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        ARCHIVED = "archived", "Archived"
+
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_threads")
+    course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.CASCADE, related_name="agent_threads")
+    title = models.CharField(max_length=200, default="新对话")
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class UserSkill(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    slug = models.SlugField(max_length=80)
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=500)
+    instructions = models.TextField()
+    resources = models.JSONField(default=dict)
+    tool_refs = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AssistantConfig(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    app_id = models.CharField(max_length=60, default="general")
+    template = models.TextField(blank=True)
+    skill_ids = models.JSONField(default=list)
+    mcp_refs = models.JSONField(default=list)
+    use_knowledge = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "course"], name="unique_assistant_config")]
+
+
+class CourseAssistantConfig(models.Model):
+    course = models.OneToOneField(Course, on_delete=models.CASCADE)
+    app_id = models.CharField(max_length=60, default="general")
+    template = models.TextField(blank=True)
+    skill_ids = models.JSONField(default=list)
+    mcp_refs = models.JSONField(default=list)
+    use_knowledge = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=0)
+    edited_by = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class MCPServer(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.SlugField(max_length=60)
+    url = models.URLField()
+    token_env = models.CharField(max_length=100, blank=True)
+    connected = models.BooleanField(default=False)
+    tools = models.JSONField(default=list)
+    is_shared = models.BooleanField(default=False)
+    session_id = models.CharField(max_length=200, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["owner", "name"], name="unique_mcp_owner_name")]
+
+
+class AgentMessage(models.Model):
+    class Role(models.TextChoices):
+        USER = "user", "User"
+        ASSISTANT = "assistant", "Assistant"
+        TOOL = "tool", "Tool"
+
+    thread = models.ForeignKey(AgentThread, on_delete=models.CASCADE, related_name="messages")
+    role = models.CharField(max_length=12, choices=Role.choices)
+    content = models.TextField(blank=True)
+    citations = models.JSONField(default=list, blank=True)
+    attachments = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AgentAttachment(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_attachments")
+    course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.CASCADE)
+    file = models.FileField(upload_to=agent_attachment_upload_path)
+    original_name = models.CharField(max_length=255)
+    size = models.PositiveBigIntegerField()
+    mime_type = models.CharField(max_length=160)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AgentRun(models.Model):
+    class Status(models.TextChoices):
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+        FAILED = "failed", "Failed"
+
+    thread = models.ForeignKey(AgentThread, on_delete=models.CASCADE, related_name="runs")
+    model = models.CharField(max_length=160, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.RUNNING)
+    error_message = models.TextField(blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+
+class AgentEvent(models.Model):
+    run = models.ForeignKey(AgentRun, on_delete=models.CASCADE, related_name="events")
+    event_type = models.CharField(max_length=32)
+    payload = models.JSONField(default=dict, blank=True)
+    sequence = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["run", "sequence"], name="unique_agent_event_sequence")]
+
+
+class AgentArtifact(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="agent_artifacts")
+    thread = models.ForeignKey(AgentThread, on_delete=models.CASCADE, related_name="artifacts")
+    course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    mime_type = models.CharField(max_length=160)
+    file = models.FileField(upload_to=artifact_upload_path)
+    preview_html = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Submission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
+    student = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["assignment", "student"], name="unique_assignment_student")]
+
+
+class SubmissionVersion(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name="versions")
+    attachment = models.OneToOneField(StoredFile, null=True, blank=True, on_delete=models.PROTECT)
+    files = models.ManyToManyField(StoredFile, blank=True, related_name="submission_versions")
+    text_content = models.TextField(blank=True)
+    number = models.PositiveIntegerField()
+    submitted_at = models.DateTimeField(default=timezone.now)
+    is_late = models.BooleanField(default=False)
+    submission_key = models.CharField(max_length=64, blank=True)
+    content_hash = models.CharField(max_length=64, blank=True)
+    review_started_at = models.DateTimeField(null=True, blank=True)
+    score = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True)
+    graded_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="graded_versions")
+    graded_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    grading_revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["submission", "number"], name="unique_submission_version"),
+            models.UniqueConstraint(fields=["submission", "submission_key"], condition=~models.Q(submission_key=""), name="unique_submission_request"),
+        ]
+
+
+class SubmissionGradeRevision(models.Model):
+    version = models.ForeignKey(SubmissionVersion, on_delete=models.CASCADE, related_name="grade_revisions")
+    revision = models.PositiveIntegerField()
+    score = models.DecimalField(max_digits=7, decimal_places=2)
+    feedback = models.TextField(blank=True)
+    published = models.BooleanField(default=False)
+    actor = models.ForeignKey(User, on_delete=models.PROTECT)
+    reason = models.CharField(max_length=500, blank=True)
+    reviewed_items = models.JSONField(default=list)
+    ai_task = models.ForeignKey('core.CourseworkTask', null=True, blank=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['revision']
+        constraints = [models.UniqueConstraint(fields=["version", "revision"], name="unique_submission_grade_revision")]
+
+
+class AuditEvent(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    actor_id = models.BigIntegerField(null=True)
+    course_id = models.BigIntegerField(null=True)
+    action = models.CharField(max_length=100)
+    object_ref = models.CharField(max_length=200)
+    status = models.CharField(max_length=16)
+    request_id = models.CharField(max_length=64, db_index=True)
+    skill_id = models.CharField(max_length=160, blank=True, db_index=True)
+    duration_ms = models.PositiveIntegerField(default=0)
+    tokens = models.PositiveBigIntegerField(null=True)
+
+from .gradebook_models import GradePolicy, GradeSnapshot
+
+from .graph_models import GraphConfig, GraphCandidate, GraphEdge, GraphResource, GraphVersion
+
+from .review_models import ReviewPlan, ReviewReminder
+from .diagnostic_models import DiagnosticSettings, DiagnosticReport, DiagnosticVersion
+from .coursework_models import CourseworkSettings, CourseworkTask, WrongAnswerReview
+from .telemetry_models import ModelCall, SkillMetricSample, SkillAlert, SkillAlertEvent, SkillMonitorHeartbeat, RequestMetric
+from .confirmation_models import ToolConfirmation

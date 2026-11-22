@@ -1,0 +1,11 @@
+title = "CampusClaw secret scan"
+[extend]
+useDefault = true
+
+# Reviewed public upstream examples only. Other content in these files is scanned.
+[[allowlists]]
+description = "Vendor documentation placeholders and Figma design identifiers"
+condition = "AND"
+paths = ['''backend/core/vendor_skills/codex/(cloudflare-deploy/references/(argo-smart-routing/(README|api)\.md|bindings/patterns\.md|pipelines/api\.md)|figma-code-connect-components/SKILL\.md|figma-implement-design/SKILL\.md|figma-generate-library/references/token-creation\.md)$''']
+regexTarget = "match"
+regexes = ['''YOUR_API_TOKEN|sk_live_abc123|kL9xQn2VwM8pYrTb4ZcHjF|pR8mNv5KqXzGwY2JtCfL4D|8yJDMeWDyBz71EnMOSuUiw|collection/primitives|primitive/blue/500''']

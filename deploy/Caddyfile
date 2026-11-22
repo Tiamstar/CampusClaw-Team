@@ -1,0 +1,8 @@
+{
+    admin off
+    email {$ACME_EMAIL}
+}
+
+{$PUBLIC_HOST} {
+    import routes.caddy
+}
