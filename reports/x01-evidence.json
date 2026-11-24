@@ -1,0 +1,376 @@
+{
+  "run_id": "1d25f189e3154c2da08ad254cf0d4e5c",
+  "started_at": "2026-11-16T01:35:27.426622+00:00",
+  "checks": [
+    {
+      "name": "graph_teacher_approval",
+      "passed": true,
+      "candidate_id": 3,
+      "material_id": 9
+    },
+    {
+      "name": "paper_answers_hidden",
+      "passed": true
+    },
+    {
+      "name": "saved_answers_restore",
+      "passed": true,
+      "attempt_id": 3
+    },
+    {
+      "name": "saved_answers_restore",
+      "passed": true,
+      "attempt_id": 4
+    },
+    {
+      "name": "concurrent_duplicate_submits",
+      "passed": true
+    },
+    {
+      "name": "single_automatic_grade_revision",
+      "passed": true,
+      "attempt_id": 3,
+      "revision_count": 1
+    },
+    {
+      "name": "single_automatic_grade_revision",
+      "passed": true,
+      "attempt_id": 4,
+      "revision_count": 1
+    },
+    {
+      "name": "submitted_last_saved_answers",
+      "passed": true,
+      "attempt_id": 3
+    },
+    {
+      "name": "automatic_objective_score",
+      "passed": true,
+      "attempt_id": 3,
+      "score": "80.00"
+    },
+    {
+      "name": "unpublished_score_hidden",
+      "passed": true
+    },
+    {
+      "name": "formal_quiz_score",
+      "passed": true,
+      "attempt_id": 3,
+      "total": "90.00",
+      "grade_revision": 2
+    },
+    {
+      "name": "submitted_last_saved_answers",
+      "passed": true,
+      "attempt_id": 4
+    },
+    {
+      "name": "automatic_objective_score",
+      "passed": true,
+      "attempt_id": 4,
+      "score": "40.00"
+    },
+    {
+      "name": "unpublished_score_hidden",
+      "passed": true
+    },
+    {
+      "name": "formal_quiz_score",
+      "passed": true,
+      "attempt_id": 4,
+      "total": "60.00",
+      "grade_revision": 2
+    },
+    {
+      "name": "two_student_statistics_limited",
+      "passed": true
+    },
+    {
+      "name": "private_weighted_total",
+      "passed": true,
+      "student_id": 13,
+      "total": "87.00",
+      "snapshot_id": 2
+    },
+    {
+      "name": "gradebook_same_quiz_revision",
+      "passed": true,
+      "attempt_id": 3
+    },
+    {
+      "name": "learning_same_quiz_revision",
+      "passed": true
+    },
+    {
+      "name": "known_mastery_recomputed",
+      "passed": true
+    },
+    {
+      "name": "graph_learning_same_version",
+      "passed": true
+    },
+    {
+      "name": "unanswered_point_unknown",
+      "passed": true
+    },
+    {
+      "name": "private_weighted_total",
+      "passed": true,
+      "student_id": 14,
+      "total": "57.00",
+      "snapshot_id": 2
+    },
+    {
+      "name": "gradebook_same_quiz_revision",
+      "passed": true,
+      "attempt_id": 4
+    },
+    {
+      "name": "learning_same_quiz_revision",
+      "passed": true
+    },
+    {
+      "name": "known_mastery_recomputed",
+      "passed": true
+    },
+    {
+      "name": "graph_learning_same_version",
+      "passed": true
+    },
+    {
+      "name": "unanswered_point_unknown",
+      "passed": true
+    },
+    {
+      "name": "real_worker_plan_ready",
+      "passed": true,
+      "plan_id": 3
+    },
+    {
+      "name": "review_same_learning_version",
+      "passed": true
+    },
+    {
+      "name": "review_same_quiz_evidence",
+      "passed": true
+    },
+    {
+      "name": "review_prerequisite_order",
+      "passed": true
+    },
+    {
+      "name": "no_reminders_before_confirmation",
+      "passed": true
+    },
+    {
+      "name": "confirmed_reminders_unique",
+      "passed": true,
+      "plan_id": 3,
+      "reminders": 6,
+      "student_id": 13
+    },
+    {
+      "name": "real_worker_plan_ready",
+      "passed": true,
+      "plan_id": 4
+    },
+    {
+      "name": "review_same_learning_version",
+      "passed": true
+    },
+    {
+      "name": "review_same_quiz_evidence",
+      "passed": true
+    },
+    {
+      "name": "review_prerequisite_order",
+      "passed": true
+    },
+    {
+      "name": "no_reminders_before_confirmation",
+      "passed": true
+    },
+    {
+      "name": "confirmed_reminders_unique",
+      "passed": true,
+      "plan_id": 4,
+      "reminders": 3,
+      "student_id": 14
+    },
+    {
+      "name": "peer_answer_learning_plan_privacy",
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "fixtures_retained": true,
+  "transport": "actual_loopback_http",
+  "auth": "server-minted access JWT; not a password-login test",
+  "fixture_boundary": "one existing teacher/student; synthetic peer with unusable password; synthetic preindexed material and manually authored candidate; graph approval is HTTP, not model extraction",
+  "scope": "Codex local X01 engineering self-test; not two human users, browser demonstration, independent acceptance or capacity test",
+  "synthetic_peer_id": 14,
+  "course_id": 13,
+  "join_code": "3STMZERC",
+  "quiz_id": 2,
+  "attempt_ids": [
+    3,
+    4
+  ],
+  "concurrent_submit": [
+    {
+      "attempt_id": 3,
+      "status": 200,
+      "duration_ms": 39.52,
+      "request_id": "77db0b59f1fd4f6286747c13e30e44ec"
+    },
+    {
+      "attempt_id": 3,
+      "status": 200,
+      "duration_ms": 47.332,
+      "request_id": "e34ac0d013a94dbf8806806b8b3252b2"
+    },
+    {
+      "attempt_id": 4,
+      "status": 200,
+      "duration_ms": 33.761,
+      "request_id": "f4482d585df244e3a952126153b6af1d"
+    },
+    {
+      "attempt_id": 4,
+      "status": 200,
+      "duration_ms": 45.057,
+      "request_id": "ee6851d8c1b246349a839c33b9671232"
+    }
+  ],
+  "assignment_id": 13,
+  "snapshot_id": 2,
+  "window": {
+    "start": "2026-11-15T01:35:28.116722+00:00",
+    "end": "2026-11-16T01:35:28.968419+00:00"
+  },
+  "student_chains": [
+    {
+      "student_id": 13,
+      "attempt_id": 3,
+      "grade_revision": 2,
+      "snapshot_id": 2,
+      "total": "87.00",
+      "learning_version": "e25cc29d16b3655934762874148bec9e69efedc7a8487b530dbdcd7c978fc438",
+      "graph_revision": 1,
+      "points": [
+        {
+          "id": 4,
+          "mastery": "1",
+          "sample_size": 4
+        },
+        {
+          "id": 5,
+          "mastery": "0.5",
+          "sample_size": 1
+        },
+        {
+          "id": 6,
+          "mastery": null,
+          "sample_size": 0
+        }
+      ],
+      "plan_id": 3,
+      "plan_basis_version": "ad714d3ba3bc2024dac8697204d260b47dbd53b54db9e48e46be3bd85c032584",
+      "plan_learning_version": "e25cc29d16b3655934762874148bec9e69efedc7a8487b530dbdcd7c978fc438",
+      "plan_order": [
+        4,
+        5
+      ],
+      "reminders": 6
+    },
+    {
+      "student_id": 14,
+      "attempt_id": 4,
+      "grade_revision": 2,
+      "snapshot_id": 2,
+      "total": "57.00",
+      "learning_version": "984f7189fbb88c6b3e4c023d6ed353d90635f532d59a8dc938accdf47ab61b82",
+      "graph_revision": 1,
+      "points": [
+        {
+          "id": 4,
+          "mastery": "0.5",
+          "sample_size": 4
+        },
+        {
+          "id": 5,
+          "mastery": "1",
+          "sample_size": 1
+        },
+        {
+          "id": 6,
+          "mastery": null,
+          "sample_size": 0
+        }
+      ],
+      "plan_id": 4,
+      "plan_basis_version": "3d0fbcf2a802b41a675f9744917a3df2c51833aa0b11223674e64716ea7f41b1",
+      "plan_learning_version": "984f7189fbb88c6b3e4c023d6ed353d90635f532d59a8dc938accdf47ab61b82",
+      "plan_order": [
+        4
+      ],
+      "reminders": 3
+    }
+  ],
+  "plan_ids": [
+    3,
+    4
+  ],
+  "review_task_states": [
+    {
+      "id": 3,
+      "status": "awaiting_confirmation",
+      "model": "course-chat"
+    },
+    {
+      "id": 4,
+      "status": "awaiting_confirmation",
+      "model": "course-chat"
+    }
+  ],
+  "finished_at": "2026-11-16T01:36:38.305011+00:00",
+  "verification_command_sha256": "35e498d6ba42536c61598fafc007ee3a014cb8f4bb2f8a238d99e2c21507f110",
+  "baseline_commit": "eed794d36e3a10af66ca09e563b4ab4af581d034",
+  "runtime": [
+    {
+      "service": "campusclaw-team-backend-1",
+      "image": "sha256:ba851e7add21028784f59cebec1093e586ded49ece11bdf65032049c57ee5fe8",
+      "provider": "openai",
+      "model_name": "course-chat"
+    },
+    {
+      "service": "campusclaw-team-forum-worker-1",
+      "image": "sha256:28cace15d6c192336d24d84212f4915304e23f5559365af8d58f428dc830ed91",
+      "provider": "openai",
+      "model_name": "course-chat"
+    }
+  ],
+  "browser": {
+    "teacher_gradebook": true,
+    "snapshot_current": true,
+    "totals": [
+      "87.00",
+      "57.00"
+    ],
+    "screenshot": "outside-repository .x01-teacher-gradebook.jpg",
+    "scope": "teacher results view only; not browser replay of quiz taking or student plan actions"
+  },
+  "validation": {
+    "unified_exit_code": 0,
+    "host_safety_tests": 8,
+    "backend_tests": 195,
+    "frontend_tests": 82,
+    "production_build": true,
+    "security_exit_code": 0,
+    "strict_openspec_passed": 7,
+    "npm_vulnerabilities": 0,
+    "python_locks_without_known_vulnerabilities": 4,
+    "secret_scan_passed": true
+  }
+}

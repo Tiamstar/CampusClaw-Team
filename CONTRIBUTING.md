@@ -2,7 +2,7 @@
 
 ## 开始前
 
-先读 [项目章程](docs/project-charter.md)、[追踪矩阵](docs/requirements-traceability.md) 和关联 OpenSpec change。本仓库目前只初始化规约，没有业务运行或测试命令；接入实现时必须补充实际可执行说明。
+先读 [项目章程](docs/project-charter.md)、[追踪矩阵](docs/requirements-traceability.md) 和关联 OpenSpec change。当前已导入 v0.1.0 基础版，实现与检查命令见 README.md；完整教学底座和 P0 扩展继续按各 change 验收。
 
 ## 一项变更的流程
 
@@ -19,7 +19,7 @@
 - `### Requirement: ID 名称` 至少包含一个 SHALL 条款和一个 `#### Scenario:`。
 - 场景使用 `GIVEN / WHEN / THEN`；覆盖权限、失败、重试或边界，避免“体验良好”“系统智能”等不可检验描述。
 - 新任务均用 `- [ ]`；只在实际完成后勾选，不把规约格式通过等同于功能通过。
-- 当前没有已验收 capability，所以三批均为新增草案，不提前归档或填造通过记录。
+- 当前完整课程 capability 仍待交叉验收，所以原三批仍为新增草案，不提前归档或填造通过记录。
 
 ```sh
 npx --yes --package=@fission-ai/openspec@1.15.0 openspec list

@@ -1,0 +1,94 @@
+{
+  "scope": "Codex local two-project isolated restore observations; not RPO/RTO or public failover",
+  "runs": [
+    {
+      "case": "production_topology",
+      "started_at": "2026-11-16T03:56:13.174829+00:00",
+      "finished_at": "2026-11-16T03:56:19.475698+00:00",
+      "source_project": "https-rehearsal-20261116-03",
+      "source_containers": {
+        "db": "93864e4048f7f6cd33bc01eae98240ff53650c61c9dbc3eb7f6dafae6012adf6",
+        "backend": "2d89bdd032b909104dff9f3c361b4c49fe36731d4a080adc1195385f8beb168e"
+      },
+      "database_image": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "backend_image": "sha256:69a2eff651c3a614cf173b1c37a67e4ce2991bf79971d83fff89f71b9f10a009",
+      "checks": {
+        "all_table_rows_equal": true,
+        "all_media_bytes_equal": true,
+        "filefield_references_exist": true,
+        "restored_sequences_safe": true,
+        "internal_network_without_published_ports": true
+      },
+      "passed": true,
+      "source_business_writes": false,
+      "external_calls": false,
+      "media_files": 3,
+      "media_bytes": 349,
+      "filefield_references": 3,
+      "sequence_checks": 71,
+      "backup_seconds": 1.482,
+      "restoration_and_verification_seconds": 4.319,
+      "total_seconds": 6.3,
+      "recovery_resources": {
+        "database": "campus-recovery-1a2f0c25c6fd-db",
+        "probe": "campus-recovery-1a2f0c25c6fd-probe",
+        "volume": "campus-recovery-1a2f0c25c6fd-pgdata",
+        "network": "campus-recovery-1a2f0c25c6fd-net"
+      },
+      "script_sha256": "0a7abafde41ac311c10ca77c0bd879079c3df73f83e2c39190ad0436399b2fed",
+      "table_count": 77,
+      "row_count": 966
+    },
+    {
+      "case": "default_local",
+      "started_at": "2026-11-16T03:56:54.064611+00:00",
+      "finished_at": "2026-11-16T03:57:10.208084+00:00",
+      "source_project": "campusclaw-team",
+      "source_containers": {
+        "db": "b5cbac58719186e1fde00f0ef3de4fa03ae560c4e303810aaa7d4b5135c60fd2",
+        "backend": "6ae93c57c8fe5cbaaec7f1b0bb3c890ec8ad3b10d8c8a214ebd6a8dfe1472c28"
+      },
+      "database_image": "sha256:9b05db12a35460fff0587e009f9326e414a53e9484555547f96d214a2ba98ef7",
+      "backend_image": "sha256:3cb80d53801f82f26c62c31705fbc4d77d68bb46d5f35e1492409ee0741a7204",
+      "checks": {
+        "all_table_rows_equal": true,
+        "all_media_bytes_equal": true,
+        "filefield_references_exist": true,
+        "restored_sequences_safe": true,
+        "internal_network_without_published_ports": true
+      },
+      "passed": true,
+      "source_business_writes": false,
+      "external_calls": false,
+      "media_files": 21,
+      "media_bytes": 39429659,
+      "filefield_references": 21,
+      "sequence_checks": 71,
+      "backup_seconds": 6.169,
+      "restoration_and_verification_seconds": 9.289,
+      "total_seconds": 16.143,
+      "recovery_resources": {
+        "database": "campus-recovery-3fd6878e88ca-db",
+        "probe": "campus-recovery-3fd6878e88ca-probe",
+        "volume": "campus-recovery-3fd6878e88ca-pgdata",
+        "network": "campus-recovery-3fd6878e88ca-net"
+      },
+      "script_sha256": "0a7abafde41ac311c10ca77c0bd879079c3df73f83e2c39190ad0436399b2fed",
+      "table_count": 76,
+      "row_count": 45431
+    }
+  ],
+  "validation": {
+    "host_tests": 15,
+    "backend_tests": 213,
+    "frontend_tests": 83,
+    "frontend_test_files": 17,
+    "production_build": "passed",
+    "migration_drift": "none",
+    "security": "passed",
+    "python_locks_audited": 4,
+    "known_python_vulnerabilities": 0,
+    "npm_vulnerabilities": 0,
+    "strict_openspec_changes": 7
+  }
+}

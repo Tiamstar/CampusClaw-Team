@@ -1,0 +1,98 @@
+{
+  "observed_at": "2026-11-16T00:50:04.636448+00:00",
+  "course_id": 6,
+  "snapshot_id": 1,
+  "plan_id": 2,
+  "draft_id": 2,
+  "checks": [
+    {
+      "name": "published_snapshot_current",
+      "passed": true
+    },
+    {
+      "name": "weighted_total_recomputed",
+      "passed": true,
+      "total": "89.60"
+    },
+    {
+      "name": "quiz_sources_present",
+      "passed": true
+    },
+    {
+      "name": "quiz_grade_version_matches",
+      "passed": true,
+      "attempt_id": 1,
+      "grade_revision": 2,
+      "score": "48.00"
+    },
+    {
+      "name": "graph_learning_version_same",
+      "passed": true
+    },
+    {
+      "name": "point_metric_same",
+      "passed": true,
+      "point_id": 1,
+      "mastery": "0.96",
+      "samples": 5
+    },
+    {
+      "name": "point_metric_same",
+      "passed": true,
+      "point_id": 2,
+      "mastery": null,
+      "samples": 0
+    },
+    {
+      "name": "point_metric_same",
+      "passed": true,
+      "point_id": 3,
+      "mastery": null,
+      "samples": 0
+    },
+    {
+      "name": "review_basis_current",
+      "passed": true
+    },
+    {
+      "name": "review_evidence_matches",
+      "passed": true
+    },
+    {
+      "name": "prerequisite_order",
+      "passed": true
+    },
+    {
+      "name": "confirmed_reminders_unique",
+      "passed": true,
+      "reminder_count": 9
+    },
+    {
+      "name": "teacher_cannot_read_private_plan",
+      "passed": true
+    },
+    {
+      "name": "teacher_confirmed_forum_reply",
+      "passed": true
+    },
+    {
+      "name": "forum_citations_current",
+      "passed": true,
+      "citation_count": 1
+    },
+    {
+      "name": "answered_todos_closed",
+      "passed": true,
+      "todo_count": 1
+    },
+    {
+      "name": "similarity_self_control",
+      "passed": true,
+      "status": "ready"
+    }
+  ],
+  "scope": "Read-only current retained single-student chain; not a new two-student concurrent X01/X02 run or independent member acceptance",
+  "business_writes": false,
+  "model_calls": false,
+  "passed": true
+}

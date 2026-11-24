@@ -1,6 +1,6 @@
 # 架构与数据契约
 
-版本：0.1 初稿。以下是建议的逻辑契约，不是已存在的接口或数据库结构；接入底座后按评审结果冻结，不能直接当作运行说明。
+版本：0.1 扩展契约草案。当前运行基座见 [v0.1.0 说明](baseline-v0.1.0.md)，使用 `/api/courses/` 与 JWT。以下描述 P0/P1 的目标模型和接口，接入扩展时逐项冻结。
 
 ## 分层与依赖
 
@@ -125,3 +125,24 @@ PostgreSQL + 底座检索存储 + 受控文件存储
 - 拟定 HTTP 语义：未认证 401；角色不允许 403；不可见对象或不存在 404；字段校验 400；版本/状态/幂等冲突 409；限流 429；外部依赖失败 503。接入后与底座保持一致并冻结测试。
 - 引用最小字段：`material_id、material_version、page_or_chunk、course_context、evidence_id`。展示链接时再次授权；删除后显示失效，不重新指向其他文件。
 - AI 产物另存 `task_id、model_id、skill_version、data_snapshot_id、reviewer、reviewed_at`；无证据的结论不得伪造出处。
+
+## 已冻结的复习接口（2026-11-16）
+
+KNO-004 实际沿用 `/api/`，非上表拟定的 v1 前缀。学生本人通过 `courses/{id}/review-plans/` POST 创建持久化排队任务，GET分页查询；`review-plans/{id}/`读取固定窗口与依据，`action/` POST确认/调整/取消，携带整数 expected_revision。确认还需 point_ids 和 schedule（timezone/start_date/local_time/offset_days），未确认不创建提醒。`review-reminders/{id}/` POST标记完成或取消；他人及教师无权管理学生个人计划。依据变化返回409且暂停旧待办，校验错误400，角色或成员错误403。完整数据、锁顺序、展示边界与实际验证见 [复习路径交付](review-path-delivery.md)。
+
+## 已冻结的诊断接口（2026-11-16）
+
+GRD-004沿用 `/api/`：课程下 `diagnostic-settings/` GET/PUT、`diagnostic-reports/` GET/POST；报告下 GET详情、`action/` POST复核/发布/取消/撤回、`revise/` POST创建修订版本、`versions/` GET历史。版本下 `html/` 和 `pdf/` 每次重新授权；学生仅有本人已发布且依据有效的版本。修改需expected_revision，确认复核携带checked_point_ids覆盖全部结论，发布需先复核当前版本。HTML/PDF源于同一content_hash，响应携带X-Report-Version及X-Report-Content-Hash。具体边界及真实模型错误反例见 [诊断交付](diagnostic-delivery.md)。
+
+
+## 已冻结的资料索引接口（2026-11-16）
+
+沿用 `/api/courses/{id}/materials/`，GET 只读；POST 上传返回 202，包含资料与 index_task，支持 multipart 的 request_key。同一任课教师、课程和 key 绑定文件字节/原文件名/标题；相同请求重放返回原资料和任务，不同内容 409。教师的 `materials/{id}/reindex/` POST 返回 202 任务；`courses/{id}/knowledge/reindex/` POST 返回各资料排队结果，复用已有运行任务。可选 request_key，批量最多 75 字符、普通最多 100 字符，仅字母数字下划线连字符。
+
+`index-tasks/{id}/` GET 查询，POST 管理（action=cancel/retry、expected_revision，retry 可携带新 request_key）；`materials/{id}/index-tasks/?page=1` GET 每页 20 条历史。仅本课程任课教师可查内部任务和管理，学生仅从资料列表读取安全概要。重试创建新任务并保留 retry_of_id，旧任务终态不覆盖。一个资料同时最多一个 queued/running 任务；取消立即标记终态，执行中外部调用可能继续，但迟到结果不会生效。查询型 GET 不恢复任务、不调用模型。
+
+数据库持久队列和独立 Linux Docker index-worker 每 2 秒扫描、原子领取。解析/嵌入最多 150 秒，租约 180 秒；到期由后续 worker 扫描标记失败，授权教师显式重试，不自动无限请求外部服务。写入完整切片与向量采用单事务；失败保留原片段但 entry 不可用于当前检索。详见 [索引交付](material-index-delivery.md)。
+
+## 作业 AI 与个人错题契约（2026-11-16）
+
+批改建议/讲解由 CourseworkTask 和独立 coursework-worker 持久化执行，HTTP 202，支持请求幂等、取消、重试和过期恢复。教师填写逐项 rubric，模型只给建议；原评分接口可提交 ai_task_id/逐项复核，明确保存才产生正式评分，公开/撤回仍走原接口。评分修订冻结 reviewed_items 与来源任务，学生只见当前公开版本。个人错题按本人最新提交和当前公开评分投影，讲解在补交/改分/撤回后失效。课程 CourseworkSettings 由本班教师保存，GET 不创建记录。接口、限制及证据见 [作业 AI 闭环](coursework-ai-delivery.md)。

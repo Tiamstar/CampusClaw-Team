@@ -1,0 +1,143 @@
+{
+  "course_id": 11,
+  "rows": [
+    {
+      "id": "69880928-6b60-4f50-809e-d4efe809c663",
+      "tool_name": "mcp_1_formula_hint",
+      "arguments": {
+        "topic": "复合函数求导"
+      },
+      "status": "succeeded",
+      "expires_at": "2026-11-15T23:24:17.603288+00:00",
+      "created_at": "2026-11-15T23:19:17.603854+00:00",
+      "result": {
+        "content": [
+          {
+            "text": "导数提示：(x^n)' = n*x^(n-1)；复合函数使用链式法则。先识别外层和内层，再分别求导。",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "result": "导数提示：(x^n)' = n*x^(n-1)；复合函数使用链式法则。先识别外层和内层，再分别求导。"
+        }
+      },
+      "error": "",
+      "uncertain": false
+    },
+    {
+      "id": "b3ddca4d-112f-4195-9d4e-c23fb1451707",
+      "tool_name": "mcp_1_formula_hint",
+      "arguments": {
+        "topic": "平方根求导（取消对照）"
+      },
+      "status": "rejected",
+      "expires_at": "2026-11-15T23:24:17.702798+00:00",
+      "created_at": "2026-11-15T23:19:17.703324+00:00",
+      "result": {},
+      "error": "",
+      "uncertain": false
+    }
+  ],
+  "browser_actions": {
+    "student": "confirmed benign formula_hint",
+    "teacher": "rejected manual control"
+  },
+  "checks": [
+    {
+      "check": "other_owner_history",
+      "status": 404,
+      "expected": 404
+    },
+    {
+      "check": "other_owner_history",
+      "status": 404,
+      "expected": 404
+    },
+    {
+      "check": "already_used_replay",
+      "status": 409,
+      "expected": 409
+    }
+  ],
+  "audit": [
+    {
+      "action": "tool.confirmation.requested",
+      "object_ref": "69880928-6b60-4f50-809e-d4efe809c663",
+      "status": "pending",
+      "request_id": "897cf78e23b9419fb55ec2bee97b8a5d"
+    },
+    {
+      "action": "tool.invoke",
+      "object_ref": "mcp_1_formula_hint",
+      "status": "pending",
+      "request_id": "897cf78e23b9419fb55ec2bee97b8a5d"
+    },
+    {
+      "action": "tool.confirmation.requested",
+      "object_ref": "b3ddca4d-112f-4195-9d4e-c23fb1451707",
+      "status": "pending",
+      "request_id": "2dd244dc4b114526b14a07e75273ea9f"
+    },
+    {
+      "action": "tool.invoke",
+      "object_ref": "mcp_1_formula_hint",
+      "status": "pending",
+      "request_id": "2dd244dc4b114526b14a07e75273ea9f"
+    },
+    {
+      "action": "tool.confirmation.consumed",
+      "object_ref": "69880928-6b60-4f50-809e-d4efe809c663",
+      "status": "ok",
+      "request_id": "f3b71df7e018464bb030fc88a5dc3a6c"
+    },
+    {
+      "action": "tool.invoke",
+      "object_ref": "mcp_1_formula_hint",
+      "status": "ok",
+      "request_id": "f3b71df7e018464bb030fc88a5dc3a6c"
+    },
+    {
+      "action": "tool.confirmation.finished",
+      "object_ref": "69880928-6b60-4f50-809e-d4efe809c663",
+      "status": "ok",
+      "request_id": "f3b71df7e018464bb030fc88a5dc3a6c"
+    },
+    {
+      "action": "tool.confirmation.rejected",
+      "object_ref": "b3ddca4d-112f-4195-9d4e-c23fb1451707",
+      "status": "ok",
+      "request_id": "fab9dad38e1b48459b36e175feb01c14"
+    },
+    {
+      "action": "tool.confirmation.denied",
+      "object_ref": "69880928-6b60-4f50-809e-d4efe809c663",
+      "status": "409",
+      "request_id": "4f1cc97295534f029325149546ce562e"
+    }
+  ],
+  "runs": [
+    {
+      "id": 23,
+      "status": "completed",
+      "model": "course-chat"
+    },
+    {
+      "id": 24,
+      "status": "completed",
+      "model": "manual-tool-test"
+    }
+  ],
+  "retained_integrity": {
+    "course6": true,
+    "version4": [
+      {
+        "score": "5.00",
+        "grading_revision": 4
+      }
+    ],
+    "reports": 1,
+    "snapshots": 1,
+    "chunks": 10016
+  }
+}

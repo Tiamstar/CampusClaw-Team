@@ -1,0 +1,108 @@
+{
+  "passed_requests": 20,
+  "model_mode": "mock",
+  "real_mcp": true,
+  "sandbox_checked": true,
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/health/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/health/live/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/me/",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/catalog/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/join/",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/2/assignments/",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/courses/2/assignments/",
+      "status": 403
+    },
+    {
+      "method": "GET",
+      "path": "/api/courses/2/knowledge/search/?q=test&mode=keyword",
+      "status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/threads/2/messages/",
+      "status": 404
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/2/messages/stream/",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/platform-tools/",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/courses/2/assistant/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/2/tool-test/",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/threads/2/tool-test/",
+      "status": 200
+    }
+  ]
+}

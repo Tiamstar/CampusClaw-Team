@@ -1,0 +1,167 @@
+{
+  "date": "2026-11-17",
+  "executor": "Codex engineering self-test",
+  "course_id": 6,
+  "model": "course-chat",
+  "transport": "APIClient views + real model gateway; distinct browser actions below",
+  "initial": [
+    {
+      "format": "txt",
+      "source_id": 1,
+      "status": "ready",
+      "units": 1,
+      "groups": 1,
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 0,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "png",
+      "source_id": 2,
+      "status": "ready",
+      "units": 1,
+      "groups": 1,
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "docx",
+      "source_id": 3,
+      "status": "ready",
+      "units": 1,
+      "groups": 1,
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    },
+    {
+      "format": "pdf",
+      "source_id": 4,
+      "status": "ready",
+      "units": 1,
+      "groups": 1,
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "error": "",
+      "semantic_review": "pending_teacher_review",
+      "retained": true
+    }
+  ],
+  "retry": [
+    {
+      "source_id": 1,
+      "status": "ready",
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 0,
+      "retained": true
+    },
+    {
+      "source_id": 2,
+      "status": "ready",
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "retained": true
+    },
+    {
+      "source_id": 3,
+      "status": "ready",
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "retained": true
+    },
+    {
+      "source_id": 4,
+      "status": "ready",
+      "questions": 2,
+      "model": "course-chat",
+      "missing_answer_keys": 2,
+      "bank_has_no_score_fields": true,
+      "asset_markers": 1,
+      "retained": true
+    }
+  ],
+  "semantic_review": {
+    "docx": "Expected 4 questions including embedded geometry paper; model returned 2 English questions. Incomplete recognition, not a full-fidelity pass.",
+    "scanned_pdf": "Two geometry questions and shared image recognized; crop partly clips A label. Teacher correction required."
+  },
+  "browser": {
+    "source_id": 4,
+    "group_id": 1,
+    "question_ids": [
+      16,
+      17
+    ],
+    "scores": [
+      "3.00",
+      "7.00"
+    ],
+    "quiz_title": "【图文识别验收】共用几何图两小题（答案留空、人工批改）",
+    "actions": [
+      "teacher reviewed source and confirmed bank insertion",
+      "teacher assembled and published quiz",
+      "student started attempt, selected C and typed area 6",
+      "saved and refreshed from server",
+      "submitted; awaiting_review; no automatic zero"
+    ],
+    "mobile": {
+      "viewport": 390,
+      "document_scroll_width": 375,
+      "visible_image_loaded": true
+    },
+    "screenshot": "Repository-external .exam-student-mobile.jpg",
+    "quiz_id": 3,
+    "attempt_id": 5
+  },
+  "deepseek": {
+    "endpoint": "https://api.deepseek.com/models",
+    "http_status": 401,
+    "model_tested": false,
+    "credential_retained_in_repo": false,
+    "needs": "Actual provider base URL and model name",
+    "followup": {
+      "date": "2026-11-17",
+      "base_url": "https://1pkapi.com/v1",
+      "models": [
+        "deepseek-v4-pro",
+        "deepseek-v4.1-flash"
+      ],
+      "models_http_status": 200,
+      "tested_model": "deepseek-v4-pro",
+      "text_http_status": 200,
+      "text_result": "Valid JSON; Chinese question preserved, answer values empty, no score.",
+      "image_http_status": 200,
+      "image_result": "Correctly described synthetic red rectangle on white background.",
+      "scope": "Direct non-streaming OpenAI-compatible requests only; no full-paper accuracy or production gateway integration claim.",
+      "service_credentials_changed": false
+    }
+  },
+  "independent_team_acceptance": false
+}
