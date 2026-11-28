@@ -175,3 +175,28 @@ it('keeps successful paging filters after a failed search',async()=>{
   expect(api).toHaveBeenLastCalledWith('courses/1/questions/?page=2&q=&kind=&point_id=&answer_state=&active=')
   w.unmount()
 })
+
+it('sends per-type scores and the selected knowledge point when creating a random quiz',async()=>{
+  const original=vi.mocked(api).getMockImplementation()!
+  vi.mocked(api).mockImplementation(async(path,...args)=>
+    path.includes('forum/points/')?[{id:5,name:'积分'}]:original(path,...args))
+  const w=mount(QuizWorkspace,{props:{courseId:1,isTeacher:true}})
+  await flushPromises()
+  await w.findAll('button').find(button=>button.text()==='创建测验')!.trigger('click')
+  const form=w.get('form')
+  const input=(label:string)=>form.findAll('label').find(item=>item.text().startsWith(label))!.get('input')
+  await input('测验标题').setValue('知识点随机测验')
+  await input('开放时间').setValue('2026-11-28T10:00')
+  await input('关闭时间').setValue('2026-11-28T11:00')
+  await input('答案解析统一公布时间').setValue('2026-11-28T11:00')
+  await form.get('select').setValue('5')
+  await input('判断题数量').setValue('2')
+  await input('判断每题分值').setValue('7.5')
+  await form.trigger('submit')
+  await flushPromises()
+  const request=vi.mocked(api).mock.calls.find(([path,method])=>path==='courses/1/quizzes/'&&method==='POST')
+  expect(request?.[2]).toEqual(expect.objectContaining({
+    rules:expect.arrayContaining([{kind:'boolean',count:2,score:'7.5',point_id:5}])
+  }))
+  w.unmount()
+})

@@ -58,14 +58,21 @@ def paper(quiz):
     selected=[];used=set()
     for rule in quiz.rules:
         from .exam_service import owned_questions
-        candidates=owned_questions(quiz.owner or quiz.course.created_by,quiz.course_id).filter(active=True,kind=rule['kind'],group__isnull=True,score__isnull=False).exclude(id__in=used)
+        candidates=owned_questions(quiz.owner or quiz.course.created_by,quiz.course_id).filter(active=True,kind=rule['kind'],group__isnull=True).exclude(id__in=used)
+        if 'score' not in rule:
+            candidates=candidates.filter(score__isnull=False)
         if rule.get('point_id'):
             candidates=candidates.filter(points__id=rule['point_id'])
         pool=list(candidates.select_for_update().prefetch_related('points').order_by('id'))
         if len(pool)<rule['count']:
             raise ValueError('候选题数量不足，请补充题目或调整规则')
         chosen=random.SystemRandom().sample(pool,rule['count'])
-        used.update(q.id for q in chosen);selected.extend(question_snapshot(q) for q in chosen)
+        used.update(q.id for q in chosen)
+        for question in chosen:
+            snapshot=question_snapshot(question)
+            if 'score' in rule:
+                snapshot['score']=rule['score']
+            selected.append(snapshot)
     random.SystemRandom().shuffle(selected)
     return selected
 

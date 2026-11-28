@@ -143,6 +143,37 @@ class QuizTests(TestCase):
         self.quiz.status='draft';self.quiz.rules=[{'kind':'short','count':50}];self.quiz.save()
         self.assertEqual(self.tc.post(f'/api/quizzes/{self.quiz.id}/publish/',{},format='json').status_code,400)
 
+    def test_random_rule_scores_unscored_bank_question_at_attempt_start(self):
+        question = Question.objects.get(pk=self.q[2]['id'])
+        question.score = None
+        question.save(update_fields=['score'])
+        Question.objects.create(course=self.c, owner=self.t, kind='boolean', body='Different tag',
+                                options=[], answer={'values':['true']})
+        url = f'/api/courses/{self.c.id}/quizzes/'
+        payload = {
+            'title':'Tagged random quiz', 'opens_at':self.quiz.opens_at.isoformat(),
+            'closes_at':self.quiz.closes_at.isoformat(), 'answers_at':self.quiz.answers_at.isoformat(),
+        }
+        rule = {'kind':'boolean', 'count':1, 'point_id':self.point.id}
+        for invalid in ('0', '0.001', 'NaN', '100000', True, None):
+            response = self.tc.post(url, {**payload, 'rules':[{**rule, 'score':invalid}]}, format='json')
+            self.assertEqual(response.status_code, 400, invalid)
+        self.assertFalse(Quiz.objects.filter(title=payload['title']).exists())
+
+        response = self.tc.post(url, {**payload, 'rules':[{**rule, 'score':'7.5'}]}, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['rules'][0]['score'], '7.50')
+        quiz_id = response.data['id']
+        self.assertEqual(self.tc.post(f'/api/quizzes/{quiz_id}/publish/', {}, format='json').status_code, 200)
+        attempt = self.sc.post(f'/api/quizzes/{quiz_id}/attempts/', {}, format='json')
+        self.assertEqual(attempt.status_code, 201)
+        self.assertEqual([(item['id'], item['score']) for item in attempt.data['paper']], [(question.id, '7.50')])
+        self.assertEqual(self.save(attempt.data, {str(question.id): 'true'}).status_code, 200)
+        self.assertEqual(self.sc.post(f"/api/quiz-attempts/{attempt.data['id']}/submit/", {}, format='json').status_code, 200)
+        self.assertEqual(QuizAttempt.objects.get(pk=attempt.data['id']).scores[str(question.id)], '7.50')
+        question.refresh_from_db()
+        self.assertIsNone(question.score)
+
     def test_five_type_scoring_rules(self):
         a=self.start();answers=self.correct()
         answers[str(self.q[1]['id'])]=['0'];answers[str(self.q[3]['id'])]='ANSWER'

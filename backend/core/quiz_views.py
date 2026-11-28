@@ -230,10 +230,14 @@ def quizzes(request,course_id):
             if not isinstance(scores,dict) or set(scores)!={str(i) for i in ids}:raise ValueError('请在组卷时为每道题设置分值')
             scores={k:str(score_value(v,Decimal('99999.99'))) for k,v in scores.items()}
             if any(Decimal(v)<=0 for v in scores.values()):raise ValueError('组卷分值须大于零')
-        elif scores:raise ValueError('随机组卷沿用旧题默认分值，不接受固定题目分值')
+        elif scores:raise ValueError('随机组卷应在抽题规则中设置分值')
         for rule in rules:
-            if not isinstance(rule,dict) or set(rule)-{'kind','count','point_id'} or rule.get('kind') not in KINDS or type(rule.get('count')) is not int or not 1<=rule['count']<=50:raise ValueError('组卷规则无效')
+            if not isinstance(rule,dict) or set(rule)-{'kind','count','point_id','score'} or rule.get('kind') not in KINDS or type(rule.get('count')) is not int or not 1<=rule['count']<=50:raise ValueError('组卷规则无效')
             if rule.get('point_id') is not None and (type(rule['point_id']) is not int or not KnowledgePoint.objects.filter(pk=rule['point_id'],course_id=course_id).exists()):raise ValueError('规则知识点无效')
+            if 'score' in rule:
+                per_question=score_value(rule['score'],Decimal('99999.99'))
+                if per_question<=0:raise ValueError('随机组卷每题分值须大于零')
+                rule['score']=str(per_question)
         if sum(r['count'] for r in rules)>100:raise ValueError('每份试卷最多 100 题')
     except (ValueError,TypeError) as e:return fail(str(e))
     q=Quiz.objects.create(course_id=course_id,title=title,opens_at=opens,closes_at=closes,answers_at=answers,

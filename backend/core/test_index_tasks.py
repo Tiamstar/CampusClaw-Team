@@ -81,6 +81,24 @@ class IndexTaskTests(TransactionTestCase):
         self.assertEqual(self.sc.post(f'/api/materials/{task.material_id}/reindex/', {}, format='json').status_code, 403)
         self.assertEqual(self.sc.post(self.url, {'file': SimpleUploadedFile('a.txt', b'x')}, format='multipart').status_code, 403)
 
+    def test_upload_rolls_back_material_file_and_task_when_enqueue_fails(self):
+        with patch('core.index_service.KnowledgeEntry.objects.update_or_create',
+                   side_effect=RuntimeError('fixture failure after inserting task')):
+            with self.assertRaisesRegex(RuntimeError, 'fixture failure'):
+                self.upload()
+
+        for model in (Material, StoredFile, MaterialIndexTask, KnowledgeEntry):
+            self.assertFalse(model.objects.exists(), model.__name__)
+        self.assertFalse(any(path.is_file() for path in Path(self.directory.name).rglob('*')))
+
+        task = self.task()
+        with patch('core.index_service.prepare_index', return_value=prepared()) as prepare:
+            self.assertTrue(process(task.pk))
+            self.assertFalse(process(task.pk))
+        prepare.assert_called_once()
+        task.refresh_from_db()
+        self.assertEqual(task.status, 'succeeded')
+
     def test_parallel_claims_do_not_duplicate_execution(self):
         task = self.task()
         def attempt(_):
